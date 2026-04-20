@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Informes Monotributo · María Soledad Montoya</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:14px;color:#222;background:#f5f5f3;min-height:100vh}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.sidebar{background:#e8e8e4;border-right:1px solid #d0d0cc;padding:1.25rem;display:flex;flex-direction:column;gap:8px}
+.sidebar-logo{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;padding-bottom:10px;border-bottom:1px solid #d0d0cc}
+.sidebar-logo strong{display:block;font-size:13px;color:#444;text-transform:none;letter-spacing:0;margin-bottom:2px}
+.sidebar h3{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.client-item{padding:9px 11px;border-radius:8px;cursor:pointer;font-size:13px;color:#555;border:1px solid transparent;display:flex;justify-content:space-between;align-items:center}
+.client-item:hover{background:#fff;border-color:#ddd}
+.client-item.active{background:#fff;border-color:#c0c0b8;color:#222;font-weight:500}
+.client-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.del-btn{font-size:11px;color:#bbb;padding:0 4px;cursor:pointer}
+.del-btn:hover{color:#e05050}
+.btn-new{width:100%;border:1px dashed #bbb;background:transparent;border-radius:8px;padding:9px;font-size:13px;cursor:pointer;color:#888;margin-top:6px}
+.btn-new:hover{background:#fff}
+.main{padding:2rem;overflow-y:auto;background:#fafaf8}
+.page-title{font-size:20px;font-weight:600;color:#333;margin-bottom:1.5rem}
+.tabs{display:flex;gap:2px;margin-bottom:1.5rem;border-bottom:1px solid #e0e0da}
+.tab{font-size:13px;padding:7px 16px;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:#444}
+.tab.active{color:#333;font-weight:500;border-bottom-color:#58677e}
+.tab-content{display:none}.tab-content.active{display:block}
+label{display:block;font-size:12px;color:#777;margin-bottom:4px;font-weight:500}
+input,select,textarea{width:100%;font-size:13px;border:1px solid #ddd;border-radius:6px;padding:7px 10px;background:#fff;color:#222;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#58677e}
+textarea{resize:vertical;min-height:52px}
+.row{display:grid;gap:12px;margin-bottom:14px}
+.g2{grid-template-columns:1fr 1fr}
+.card{background:#fff;border:1px solid #e8e8e2;border-radius:12px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-title{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.85rem}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;border-radius:7px;background:#f8f8f6}
+.toggle-row label{margin:0;font-size:13px;color:#444;cursor:pointer;font-weight:400}
+input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#58677e}
+.rubro-row{display:grid;grid-template-columns:1fr 150px auto;gap:8px;margin-bottom:10px;align-items:end}
+.btn-add{font-size:12px;border:1px dashed #ccc;background:transparent;border-radius:7px;padding:6px 14px;cursor:pointer;color:#888}
+.btn-add:hover{background:#f5f5f3}
+.btn-remove{background:transparent;border:none;color:#ccc;cursor:pointer;padding:6px 8px;font-size:16px;border-radius:6px}
+.btn-remove:hover{color:#e05050;background:#fff0f0}
+.month-table{width:100%;border-collapse:collapse}
+.month-table th{font-size:11px;color:#aaa;font-weight:600;padding:6px 8px;text-align:right;border-bottom:1px solid #eee;background:#fafaf8}
+.month-table th:first-child{text-align:left}
+.month-table td{padding:4px 5px;border-bottom:1px solid #f0f0ec}
+.month-table td input{font-size:12px;text-align:right;border:1px solid transparent;background:transparent;padding:3px 6px;border-radius:5px;width:100%;color:#333}
+.month-table td input:focus{background:#fff;border-color:#ddd;outline:none}
+.month-table td:first-child{font-size:12px;color:#aaa;padding-left:4px;width:42px;font-weight:500}
+.month-table tr:hover td{background:#fafaf8}
+.month-table tr.total-row td{font-size:12px;font-weight:600;background:#f0f0ec;padding:6px 5px;color:#444}
+.total-row td:first-child{padding-left:8px}
+.btn-pdf{background:#58677e;color:#fff;border:none;border-radius:9px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:.75rem}
+.btn-pdf:hover{background:#46556a}
+.empty-state{text-align:center;padding:5rem 2rem;color:#bbb}
+.empty-state p{font-size:15px;margin-bottom:1.25rem;color:#aaa}
+.preview-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0ec;font-size:13px}
+.preview-label{color:#999}
+.preview-val{color:#333;font-weight:500}
+.section-sep{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;padding-top:10px;border-top:1px solid #eee}
+.opt-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;background:#eef2f7;color:#58677e;margin-left:6px;font-weight:600}
+.alert-info{background:#eef2f7;border:1px solid #c8d4e3;border-radius:8px;padding:10px 14px;font-size:13px;color:#58677e;margin-bottom:1rem}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <strong>María Soledad Montoya</strong>
+      Gestión del Cambio · Informes Monotributo
+    </div>
+    <h3>Clientes</h3>
+    <div id="client-list"></div>
+    <button class="btn-new" onclick="newClient()">+ Nuevo cliente</button>
+  </div>
+  <div class="main" id="main-area">
+    <div class="empty-state">
+      <p>Seleccioná un cliente o creá uno nuevo para comenzar.</p>
+      <button class="btn-new" style="width:auto;padding:10px 22px;border-radius:8px" onclick="newClient()">+ Nuevo cliente</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MESES_FULL=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// Usamos variable en memoria en lugar de localStorage
+var appData = { clients: [] };
+var currentId = null;
+
+function saveData() {
+  try {
+    var str = JSON.stringify(appData.clients);
+    localStorage.setItem('mono_v4', str);
+  } catch(e) {}
+}
+
+function loadData() {
+  try {
+    var str = localStorage.getItem('mono_v4');
+    if (str) appData.clients = JSON.parse(str);
+  } catch(e) {
+    appData.clients = [];
+  }
+}
+
+function getClient() {
+  for (var i=0; i<appData.clients.length; i++) {
+    if (appData.clients[i].id === currentId) return appData.clients[i];
+  }
+  return null;
+}
+
+function newClient() {
+  var c = {
+    id: 'c' + Date.now(),
+    nombre:'', cuit:'', domicilio:'',
+    categoria:'E', actividad:'Servicios',
+    rubros:[{nombre:'Facturación principal', tipo:'servicios'}],
+    tieneTasasNac:false, tieneTasaMunicipal:false, tieneMipyme:false,
+    mipymeVence:'', mipymeCat:'Micro', municipio:'',
+    meses:[], vencFecha:'', vencImporte:'',
+    arcaDeuda:false, arcaDeudor:'', arcaMensual:'', arcaNota:'',
+    atpAldia:true, atpDeuda:'',
+    tasaUS:'', tasaCNT:'', tasaMunicipal:'',
+    anio: String(new Date().getFullYear()),
+    mesInforme: String(new Date().getMonth())
+  };
+  for (var i=0; i<12; i++) c.meses.push({});
+  appData.clients.push(c);
+  saveData();
+  currentId = c.id;
+  renderSidebar();
+  renderMain();
+}
+
+function selectClient(id) { currentId = id; renderSidebar(); renderMain(); }
+
+function deleteClient(id, evt) {
+  evt.stopPropagation();
+  if (!confirm('¿Eliminar este cliente?')) return;
+  appData.clients = appData.clients.filter(function(c){ return c.id !== id; });
+  if (currentId === id) currentId = null;
+  saveData();
+  renderSidebar();
+  if (!currentId) {
+    document.getElementById('main-area').innerHTML = '<div class="empty-state"><p>Seleccioná un cliente o creá uno nuevo.</p><button class="btn-new" style="width:auto;padding:10px 22px;border-radius:8px" onclick="newClient()">+ Nuevo cliente</button></div>';
+  } else renderMain();
+}
+
+function renderSidebar() {
+  var el = document.getElementById('client-list');
+  var html = '';
+  for (var i=0; i<appData.clients.length; i++) {
+    var c = appData.clients[i];
+    var active = c.id === currentId ? ' active' : '';
+    html += '<div class="client-item' + active + '" onclick="selectClient(\'' + c.id + '\')">';
+    html += '<span class="client-name">' + (c.nombre || 'Sin nombre') + '</span>';
+    html += '<span class="del-btn" onclick="deleteClient(\'' + c.id + '\', event)">✕</span>';
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function up(field, val) {
+  var c = getClient(); if (!c) return;
+  c[field] = val; saveData();
+  if (field === 'nombre') renderSidebar();
+}
+
+function upMes(mi, ri, val) {
+  var c = getClient(); if (!c) return;
+  if (!c.meses[mi]) c.meses[mi] = {};
+  c.meses[mi][ri] = val; saveData(); calcTotales();
+}
+
+function calcTotales() {
+  var c = getClient(); if (!c) return;
+  var nR = c.rubros.length;
+  var tots = []; for (var i=0; i<nR; i++) tots.push(0);
+  var grand = 0;
+  for (var m=0; m<12; m++) {
+    var rowT = 0;
+    for (var r=0; r<nR; r++) {
+      var v = parseFloat((c.meses[m] && c.meses[m][r]) ? c.meses[m][r] : 0);
+      tots[r] += v; rowT += v;
+    }
+    var rtEl = document.getElementById('rowt-' + m);
+    if (rtEl) rtEl.textContent = rowT > 0 ? '$' + rowT.toLocaleString('es-AR', {maximumFractionDigits:0}) : '';
+    grand += rowT;
+  }
+  for (var r=0; r<nR; r++) {
+    var el = document.getElementById('colt-' + r);
+    if (el) el.textContent = tots[r] > 0 ? '$' + tots[r].toLocaleString('es-AR', {maximumFractionDigits:0}) : '';
+  }
+  var gtEl = document.getElementById('grand-total');
+  if (gtEl) gtEl.textContent = grand > 0 ? '$' + grand.toLocaleString('es-AR', {maximumFractionDigits:0}) : '';
+}
+
+function addRubro() {
+  var c = getClient(); if (!c || c.rubros.length >= 5) return;
+  c.rubros.push({nombre:'', tipo:'servicios'}); saveData(); renderMain();
+}
+
+function removeRubro(idx) {
+  var c = getClient(); if (!c || c.rubros.length <= 1) return;
+  c.rubros.splice(idx, 1);
+  for (var m=0; m<12; m++) {
+    if (c.meses[m]) {
+      var newM = {};
+      var keys = Object.keys(c.meses[m]);
+      for (var k=0; k<keys.length; k++) {
+        var ki = parseInt(keys[k]);
+        if (ki < idx) newM[ki] = c.meses[m][keys[k]];
+        else if (ki > idx) newM[ki-1] = c.meses[m][keys[k]];
+      }
+      c.meses[m] = newM;
+    }
+  }
+  saveData(); renderMain();
+}
+
+function upRubro(idx, field, val) {
+  var c = getClient(); if (!c) return;
+  c.rubros[idx][field] = val; saveData();
+  if (field === 'nombre') {
+    var th = document.getElementById('rth-' + idx);
+    if (th) th.textContent = val || ('Rubro ' + (idx+1));
+  }
+}
+
+function renderMain() {
+  var c = getClient();
+  if (!c) { document.getElementById('main-area').innerHTML = '<div class="empty-state"><p>Seleccioná un cliente.</p></div>'; return; }
+
+  var mesOpts = '';
+  for (var i=0; i<MESES_FULL.length; i++) {
+    mesOpts += '<option value="' + i + '"' + (String(c.mesInforme) == String(i) ? ' selected' : '') + '>' + MESES_FULL[i] + '</option>';
+  }
+
+  var catOpts = '';
+  var cats = ['A','B','C','D','E','F','G','H','I','J','K'];
+  for (var i=0; i<cats.length; i++) {
+    catOpts += '<option' + (c.categoria === cats[i] ? ' selected' : '') + '>' + cats[i] + '</option>';
+  }
+
+  var rubrosHtml = '';
+  for (var i=0; i<c.rubros.length; i++) {
+    var r = c.rubros[i];
+    rubrosHtml += '<div class="rubro-row">';
+    rubrosHtml += '<div><label>Nombre del rubro ' + (i+1) + '</label><input type="text" value="' + (r.nombre||'') + '" placeholder="Ej: Facturación cabañas" oninput="upRubro(' + i + ',\'nombre\',this.value)"></div>';
+    rubrosHtml += '<div><label>Tipo</label><select onchange="upRubro(' + i + ',\'tipo\',this.value)"><option value="servicios"' + (r.tipo==='servicios'?' selected':'') + '>Servicios</option><option value="productos"' + (r.tipo==='productos'?' selected':'') + '>Productos</option></select></div>';
+    if (c.rubros.length > 1) rubrosHtml += '<button class="btn-remove" onclick="removeRubro(' + i + ')">×</button>';
+    else rubrosHtml += '<div></div>';
+    rubrosHtml += '</div>';
+  }
+
+  var thRubros = '';
+  for (var i=0; i<c.rubros.length; i++) thRubros += '<th id="rth-' + i + '">' + (c.rubros[i].nombre || 'Rubro '+(i+1)) + '</th>';
+
+  var totRubros = '';
+  for (var i=0; i<c.rubros.length; i++) totRubros += '<td id="colt-' + i + '" style="text-align:right;color:#aaa"></td>';
+
+  var filas = '';
+  for (var m=0; m<12; m++) {
+    filas += '<tr><td>' + MESES[m] + '</td>';
+    for (var r=0; r<c.rubros.length; r++) {
+      var val = (c.meses[m] && c.meses[m][r]) ? c.meses[m][r] : '';
+      filas += '<td><input type="number" value="' + val + '" placeholder="0" oninput="upMes(' + m + ',' + r + ',this.value)"></td>';
+    }
+    filas += '<td id="rowt-' + m + '" style="text-align:right;color:#aaa;padding-right:6px;font-size:12px"></td></tr>';
+  }
+
+  var tasasNacHtml = c.tieneTasasNac ? '<div class="card"><div class="card-title">Tasas nacionales <span class="opt-tag">TUSV / CNT</span></div><p style="font-size:12px;color:#aaa;margin-bottom:12px">Por ventas del mes anterior</p><div class="row g2"><div><label>Tasa Universal de Servicio ($)</label><input type="number" value="' + (c.tasaUS||'') + '" placeholder="Ej: 2260" oninput="up(\'tasaUS\',this.value)"></div><div><label>Tasa CNT ($)</label><input type="number" value="' + (c.tasaCNT||'') + '" placeholder="Ej: 1130" oninput="up(\'tasaCNT\',this.value)"></div></div></div>' : '';
+
+  var tasaMunHtml = c.tieneTasaMunicipal ? '<div class="card"><div class="card-title">Tasa Municipal de Industria y Comercio</div><p style="font-size:12px;color:#aaa;margin-bottom:12px">Varía según facturación del período</p><div class="row g2"><div><label>Importe del mes ($)</label><input type="number" value="' + (c.tasaMunicipal||'') + '" placeholder="Ej: 5800" oninput="up(\'tasaMunicipal\',this.value)"></div><div><label>Municipio / localidad</label><input type="text" value="' + (c.municipio||'') + '" placeholder="Ej: Resistencia" oninput="up(\'municipio\',this.value)"></div></div></div>' : '';
+
+  var mipymeHtml = c.tieneMipyme ? '<div class="card"><div class="card-title">Certificado MiPyme</div><div class="row g2"><div><label>Válido hasta</label><input type="date" value="' + (c.mipymeVence||'') + '" onchange="up(\'mipymeVence\',this.value)"></div><div><label>Categoría empresa</label><select onchange="up(\'mipymeCat\',this.value)"><option' + ((c.mipymeCat||'Micro')==='Micro'?' selected':'') + '>Micro</option><option' + (c.mipymeCat==='Pequeña'?' selected':'') + '>Pequeña</option><option' + (c.mipymeCat==='Mediana'?' selected':'') + '>Mediana</option></select></div></div></div>' : '';
+
+  var arcaHtml = c.arcaDeuda ? '<div class="row g2"><div><label>Saldo deudor ($)</label><input type="number" value="' + (c.arcaDeudor||'') + '" oninput="up(\'arcaDeudor\',this.value)"></div><div><label>Obligación mensual ($)</label><input type="number" value="' + (c.arcaMensual||'') + '" oninput="up(\'arcaMensual\',this.value)"></div></div><div><label>Nota / observación</label><textarea oninput="up(\'arcaNota\',this.value)">' + (c.arcaNota||'') + '</textarea></div>' : '<p style="font-size:13px;color:#aaa;padding:4px 0">Sin deuda · Al día</p>';
+
+  var atpHtml = !c.atpAldia ? '<div><label>Deuda pendiente ($)</label><input type="number" value="' + (c.atpDeuda||'') + '" oninput="up(\'atpDeuda\',this.value)"></div>' : '<p style="font-size:13px;color:#aaa;padding:4px 0">Al día</p>';
+
+  document.getElementById('main-area').innerHTML =
+    '<div class="page-title">' + (c.nombre || 'Nuevo cliente') + '</div>' +
+    '<div class="tabs">' +
+      '<div class="tab active" onclick="showTab(\'perfil\',this)">Perfil</div>' +
+      '<div class="tab" onclick="showTab(\'facturacion\',this)">Facturación</div>' +
+      '<div class="tab" onclick="showTab(\'obligaciones\',this)">Obligaciones</div>' +
+      '<div class="tab" onclick="showTab(\'preview\',this)">Vista previa y PDF</div>' +
+    '</div>' +
+
+    '<div class="tab-content active" id="tab-perfil">' +
+      '<div class="card"><div class="card-title">Datos del cliente</div>' +
+        '<div class="row g2"><div><label>Nombre y apellido</label><input type="text" value="' + (c.nombre||'') + '" placeholder="Ej: Mariana Salemi" oninput="up(\'nombre\',this.value)"></div>' +
+        '<div><label>CUIT</label><input type="text" value="' + (c.cuit||'') + '" placeholder="27-00000000-0" oninput="up(\'cuit\',this.value)"></div></div>' +
+        '<div class="row g2"><div><label>Categoría monotributo</label><select onchange="up(\'categoria\',this.value)">' + catOpts + '</select></div>' +
+        '<div><label>Dependencia ARCA</label><input type="text" value="' + (c.domicilio||'') + '" placeholder="Ej: Agencia-Sede Resistencia" oninput="up(\'domicilio\',this.value)"></div></div>' +
+        '<div class="row g2"><div><label>Mes del informe</label><select onchange="up(\'mesInforme\',this.value)">' + mesOpts + '</select></div>' +
+        '<div><label>Año</label><input type="number" value="' + (c.anio||'') + '" oninput="up(\'anio\',this.value)"></div></div>' +
+      '</div>' +
+      '<div class="card"><div class="card-title">Rubros de facturación</div>' + rubrosHtml +
+        (c.rubros.length < 5 ? '<button class="btn-add" onclick="addRubro()">+ Agregar rubro</button>' : '') +
+      '</div>' +
+      '<div class="card"><div class="card-title">Secciones opcionales</div>' +
+        '<p style="font-size:12px;color:#aaa;margin-bottom:12px">Activá solo lo que aplica a este cliente.</p>' +
+        '<div class="toggle-row"><input type="checkbox" id="chk1"' + (c.arcaDeuda?' checked':'') + ' onchange="up(\'arcaDeuda\',this.checked);renderMain()"><label for="chk1">Tiene deuda en ARCA</label></div>' +
+        '<div class="toggle-row"><input type="checkbox" id="chk2"' + (!c.atpAldia?' checked':'') + ' onchange="up(\'atpAldia\',!this.checked);renderMain()"><label for="chk2">Tiene deuda en ATP</label></div>' +
+        '<div class="toggle-row"><input type="checkbox" id="chk3"' + (c.tieneTasasNac?' checked':'') + ' onchange="up(\'tieneTasasNac\',this.checked);renderMain()"><label for="chk3">Paga tasas nacionales (TUSV / CNT)</label></div>' +
+        '<div class="toggle-row"><input type="checkbox" id="chk4"' + (c.tieneTasaMunicipal?' checked':'') + ' onchange="up(\'tieneTasaMunicipal\',this.checked);renderMain()"><label for="chk4">Paga Tasa Municipal de Industria y Comercio</label></div>' +
+        '<div class="toggle-row"><input type="checkbox" id="chk5"' + (c.tieneMipyme?' checked':'') + ' onchange="up(\'tieneMipyme\',this.checked);renderMain()"><label for="chk5">Tiene certificado MiPyme</label></div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="tab-content" id="tab-facturacion">' +
+      '<div class="card"><div class="card-title">Ingresos anuales declarados · ' + c.anio + '</div>' +
+        '<div style="overflow-x:auto"><table class="month-table">' +
+          '<thead><tr><th>Mes</th>' + thRubros + '<th style="text-align:right">Total</th></tr></thead>' +
+          '<tbody>' + filas + '</tbody>' +
+          '<tfoot><tr class="total-row"><td>Total</td>' + totRubros + '<td id="grand-total" style="text-align:right"></td></tr></tfoot>' +
+        '</table></div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="tab-content" id="tab-obligaciones">' +
+      '<div class="card"><div class="card-title">Próximo vencimiento</div>' +
+        '<div class="row g2"><div><label>Fecha</label><input type="date" value="' + (c.vencFecha||'') + '" onchange="up(\'vencFecha\',this.value)"></div>' +
+        '<div><label>Importe ($)</label><input type="number" value="' + (c.vencImporte||'') + '" placeholder="Ej: 142173.97" oninput="up(\'vencImporte\',this.value)"></div></div>' +
+      '</div>' +
+      '<div class="card"><div class="card-title">ARCA</div>' + arcaHtml + '</div>' +
+      '<div class="card"><div class="card-title">ATP</div>' + atpHtml + '</div>' +
+      tasasNacHtml + tasaMunHtml + mipymeHtml +
+    '</div>' +
+
+    '<div class="tab-content" id="tab-preview">' +
+      '<div class="alert-info">Revisá los datos antes de generar el PDF.</div>' +
+      '<div class="card" id="preview-data"></div>' +
+      '<button class="btn-pdf" onclick="generarPDF()">Descargar PDF del informe</button>' +
+    '</div>';
+
+  calcTotales();
+}
+
+function showTab(id, el) {
+  var tabs = document.querySelectorAll('.tab-content');
+  for (var i=0; i<tabs.length; i++) tabs[i].classList.remove('active');
+  var tabBtns = document.querySelectorAll('.tab');
+  for (var i=0; i<tabBtns.length; i++) tabBtns[i].classList.remove('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'preview') buildPreview();
+}
+
+function fmt(n) { return parseFloat(n||0).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+function buildPreview() {
+  var c = getClient(); if (!c) return;
+  var totalFact = 0;
+  for (var m=0; m<12; m++) for (var r=0; r<c.rubros.length; r++) totalFact += parseFloat((c.meses[m] && c.meses[m][r]) ? c.meses[m][r] : 0);
+  var mesNombre = MESES_FULL[parseInt(c.mesInforme||0)];
+  var nSec = 3;
+  var html = '<div class="section-sep">Datos del cliente</div>';
+  html += '<div class="preview-row"><span class="preview-label">Nombre</span><span class="preview-val">' + (c.nombre||'—') + '</span></div>';
+  html += '<div class="preview-row"><span class="preview-label">CUIT</span><span class="preview-val">' + (c.cuit||'—') + '</span></div>';
+  html += '<div class="preview-row"><span class="preview-label">Período</span><span class="preview-val">' + mesNombre + ' ' + c.anio + '</span></div>';
+  html += '<div class="preview-row"><span class="preview-label">Categoría</span><span class="preview-val">' + c.categoria + '</span></div>';
+  html += '<div class="section-sep">1 · Facturación acumulada</div>';
+  for (var i=0; i<c.rubros.length; i++) {
+    var t = 0; for (var m=0; m<12; m++) t += parseFloat((c.meses[m] && c.meses[m][i]) ? c.meses[m][i] : 0);
+    html += '<div class="preview-row"><span class="preview-label">' + (c.rubros[i].nombre||'Rubro '+(i+1)) + '</span><span class="preview-val">$' + fmt(t) + '</span></div>';
+  }
+  html += '<div class="preview-row"><span class="preview-label" style="font-weight:600">Total acumulado</span><span class="preview-val" style="font-weight:600">$' + fmt(totalFact) + '</span></div>';
+  html += '<div class="section-sep">2 · Vencimiento</div>';
+  html += '<div class="preview-row"><span class="preview-label">Fecha</span><span class="preview-val">' + (c.vencFecha||'—') + '</span></div>';
+  html += '<div class="preview-row"><span class="preview-label">Importe</span><span class="preview-val">$' + fmt(c.vencImporte) + '</span></div>';
+  html += '<div class="section-sep">3 · Cumplimiento</div>';
+  html += '<div class="preview-row"><span class="preview-label">ARCA</span><span class="preview-val">' + (c.arcaDeuda ? 'Deuda: $'+fmt(c.arcaDeudor) : 'Al día') + '</span></div>';
+  html += '<div class="preview-row"><span class="preview-label">ATP</span><span class="preview-val">' + (c.atpAldia ? 'Al día' : 'Deuda: $'+fmt(c.atpDeuda)) + '</span></div>';
+  if (c.tieneTasasNac) { nSec++; html += '<div class="section-sep">' + nSec + ' · Tasas nacionales</div><div class="preview-row"><span class="preview-label">TUSV</span><span class="preview-val">$' + fmt(c.tasaUS) + '</span></div><div class="preview-row"><span class="preview-label">CNT</span><span class="preview-val">$' + fmt(c.tasaCNT) + '</span></div>'; }
+  if (c.tieneTasaMunicipal) { nSec++; html += '<div class="section-sep">' + nSec + ' · Tasa Municipal</div><div class="preview-row"><span class="preview-label">Municipio</span><span class="preview-val">' + (c.municipio||'—') + '</span></div><div class="preview-row"><span class="preview-label">Importe</span><span class="preview-val">$' + fmt(c.tasaMunicipal) + '</span></div>'; }
+  if (c.tieneMipyme) { nSec++; html += '<div class="section-sep">' + nSec + ' · MiPyme</div><div class="preview-row"><span class="preview-label">Válido hasta</span><span class="preview-val">' + (c.mipymeVence||'—') + '</span></div>'; }
+  document.getElementById('preview-data').innerHTML = html;
+}
+
+function generarPDF() {
+  var c = getClient(); if (!c) return;
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({unit:'mm', format:'a4'});
+  var W=210, M=18;
+  var mesNombre = MESES_FULL[parseInt(c.mesInforme||0)];
+
+  doc.setFillColor(88,103,126); doc.rect(0,0,W,44,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18); doc.setFont('helvetica','bold');
+  doc.text('INFORME MENSUAL MONOTRIBUTO', W/2, 16, {align:'center'});
+  doc.setFontSize(13); doc.setFont('helvetica','normal');
+  doc.text((c.nombre||'—').toUpperCase(), W/2, 27, {align:'center'});
+  doc.text((mesNombre+' '+c.anio).toUpperCase(), W/2, 35, {align:'center'});
+  doc.setFillColor(88,103,126); doc.rect(0,282,W,15,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255);
+  doc.text('MARÍA SOLEDAD MONTOYA · Gestión del Cambio y Mejora de Procesos', W/2, 290, {align:'center'});
+
+  var y = 52;
+  function sect(title) {
+    if (y > 255) { doc.addPage(); y = 20; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(88,103,126);
+    doc.text(title, M, y); doc.setDrawColor(88,103,126); doc.line(M, y+0.5, W-M, y+0.5);
+    doc.setTextColor(50,50,50); y += 7;
+  }
+  function infoRow(label, val) {
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.setTextColor(120,120,120); doc.text(label, M, y);
+    doc.setTextColor(40,40,40); doc.text(String(val), W-M, y, {align:'right'}); y += 5.5;
+  }
+
+  sect('DATOS DEL CLIENTE');
+  infoRow('Nombre', c.nombre||'—'); infoRow('CUIT', c.cuit||'—');
+  infoRow('Categoría monotributo', c.categoria);
+  if (c.domicilio) infoRow('Dependencia', c.domicilio);
+  y += 3;
+
+  sect('1- INGRESOS ANUALES DECLARADOS');
+  var nR = c.rubros.length;
+  var factColW = Math.floor((W-M*2-40-18)/nR);
+  doc.setFillColor(220,227,235); doc.rect(M,y,W-M*2,5.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(40,40,40);
+  doc.text('Mes', M+1, y+3.8);
+  for (var i=0; i<c.rubros.length; i++) doc.text((c.rubros[i].nombre||'Rubro '+(i+1)).substring(0,22), M+40+i*factColW, y+3.8);
+  doc.text('Total', W-M-1, y+3.8, {align:'right'});
+  y += 5.5;
+  var tots = []; for (var i=0; i<nR; i++) tots.push(0);
+  var grand = 0;
+  for (var m=0; m<12; m++) {
+    var rowT = 0;
+    if (m%2===0) { doc.setFillColor(249,250,251); doc.rect(M,y,W-M*2,5,'F'); }
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(90,90,90);
+    doc.text(MESES[m]+'-'+String(c.anio).slice(-2), M+1, y+3.5);
+    for (var r=0; r<nR; r++) {
+      var v = parseFloat((c.meses[m] && c.meses[m][r]) ? c.meses[m][r] : 0);
+      tots[r] += v; rowT += v;
+      if (v>0) doc.text('$'+fmt(v), M+40+r*factColW+factColW-1, y+3.5, {align:'right'});
+    }
+    grand += rowT;
+    if (rowT>0) { doc.setTextColor(40,40,40); doc.text('$'+fmt(rowT), W-M-1, y+3.5, {align:'right'}); }
+    y += 5;
+  }
+  doc.setFillColor(195,208,222); doc.rect(M,y,W-M*2,5.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(30,30,30);
+  doc.text('TOTAL', M+1, y+3.8);
+  for (var i=0; i<nR; i++) { if (tots[i]>0) doc.text('$'+fmt(tots[i]), M+40+i*factColW+factColW-1, y+3.8, {align:'right'}); }
+  doc.text('$'+fmt(grand), W-M-1, y+3.8, {align:'right'});
+  y += 9;
+
+  sect('2- MONTO MENSUAL A PAGAR');
+  doc.setFillColor(240,248,242); doc.roundedRect(M,y,W-M*2,15,2,2,'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(70,70,70);
+  doc.text('Próximo vencimiento: '+(c.vencFecha||'—'), M+4, y+6.5);
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(30,30,30);
+  doc.text('Importe a pagar: $'+fmt(c.vencImporte), M+4, y+12);
+  y += 20;
+
+  sect('3- ESTADO DE CUMPLIMIENTO');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(40,40,40);
+  doc.text('a- ARCA', M, y); y += 4;
+  if (c.arcaDeuda) {
+    var h = c.arcaNota ? 22 : 14;
+    doc.setFillColor(248,249,251); doc.roundedRect(M,y,W-M*2,h,2,2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(60,60,60);
+    doc.text('Total Saldo Deudor: $'+fmt(c.arcaDeudor), M+4, y+6);
+    doc.text('Obligación Mensual: $'+fmt(c.arcaMensual), M+4, y+12);
+    if (c.arcaNota) { doc.setFontSize(7.5); doc.setTextColor(110,110,110); var nl=doc.splitTextToSize('Nota: '+c.arcaNota, W-M*2-8); doc.text(nl, M+4, y+17); }
+    y += h+4;
+  } else {
+    doc.setFillColor(240,250,243); doc.roundedRect(M,y,W-M*2,9,2,2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(40,130,70);
+    doc.text('Sin deuda · Al día', M+4, y+6); y += 13;
+  }
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(40,40,40);
+  doc.text('b- ATP', M, y); y += 4;
+  if (!c.atpAldia) {
+    doc.setFillColor(255,247,237); doc.roundedRect(M,y,W-M*2,9,2,2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(180,80,20);
+    doc.text('Deuda pendiente: $'+fmt(c.atpDeuda), M+4, y+6); y += 13;
+  } else {
+    doc.setFillColor(240,250,243); doc.roundedRect(M,y,W-M*2,9,2,2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(40,130,70);
+    doc.text('Al día', M+4, y+6); y += 13;
+  }
+  y += 2;
+
+  var secNum = 4;
+  if (c.tieneTasasNac) {
+    sect(secNum+'- TASAS NACIONALES (TUSV / CNT)'); secNum++;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110,110,110);
+    doc.text('Por ventas del mes anterior', M, y); y += 5;
+    doc.setFillColor(248,249,251); doc.roundedRect(M,y,W-M*2,11,2,2,'F');
+    doc.setFontSize(9); doc.setTextColor(50,50,50);
+    doc.text('Tasa Universal de Servicio: $'+fmt(c.tasaUS), M+4, y+7);
+    doc.text('Tasa CNT: $'+fmt(c.tasaCNT), M+108, y+7);
+    y += 16;
+  }
+  if (c.tieneTasaMunicipal) {
+    sect(secNum+'- TASA MUNICIPAL DE INDUSTRIA Y COMERCIO'); secNum++;
+    doc.setFillColor(248,249,251); doc.roundedRect(M,y,W-M*2,14,2,2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
+    if (c.municipio) doc.text('Municipio / Localidad: '+c.municipio, M+4, y+6);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(30,30,30);
+    doc.text('Importe del mes: $'+fmt(c.tasaMunicipal), M+4, y+12);
+    y += 19;
+  }
+  if (c.tieneMipyme) {
+    sect(secNum+'- CERTIFICADO MIPYME');
+    doc.setFillColor(248,249,251); doc.roundedRect(M,y,W-M*2,14,2,2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,60,60);
+    doc.text('Certificado MiPyme vigente hasta el '+(c.mipymeVence||'—'), M+4, y+6);
+    doc.text('Categoría: '+(c.mipymeCat||'Micro')+'  ·  Sector: Servicios', M+4, y+12);
+    y += 18;
+  }
+
+  doc.save('Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf');
+}
+
+// Inicializar
+loadData();
+renderSidebar();
+</script>
+</body>
+</html>
