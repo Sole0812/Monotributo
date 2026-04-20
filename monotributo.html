@@ -90,6 +90,22 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#58677e}
 .pct-bar{height:10px;border-radius:10px}
 .col-header-fact{font-size:10px;color:#446;background:#eef2ff;padding:4px 8px;border-radius:4px;display:inline-block;margin-bottom:4px}
 .col-header-oblig{font-size:10px;color:#844;background:#fff0f0;padding:4px 8px;border-radius:4px;display:inline-block;margin-bottom:4px}
+
+/* Quitar flechas de inputs numéricos */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+/* Settings panel */
+.settings-btn{position:fixed;bottom:1.5rem;left:1rem;background:#58677e;color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.settings-btn:hover{background:#46556a}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:2rem;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:16px;font-weight:600;color:#333;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid #eee}
+.modal-footer{display:flex;gap:10px;margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee}
+.btn-save{background:#58677e;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;flex:1}
+.btn-save:hover{background:#46556a}
+.btn-cancel{background:transparent;border:1px solid #ddd;border-radius:8px;padding:9px 20px;font-size:13px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -523,7 +539,50 @@ function generarPDF(){
   var acumulado=totalFact+semAnt;
   var anioSig=parseInt(c.anio)+1;
 
-  // Header
+  // Obtener configuración
+  var cfg=getCfg();
+
+  // ===== PÁGINA 1: PORTADA =====
+  // Fondo gris azulado
+  doc.setFillColor(88,103,126);doc.rect(0,0,W,297,'F');
+  
+  // Logo monograma "ma" - dibujado con formas
+  // Círculo decorativo
+  doc.setDrawColor(255,255,255);doc.setLineWidth(0.5);
+  doc.setFillColor(255,255,255);
+  // Letras "ma" estilizadas
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(52);doc.setFont('helvetica','normal');
+  doc.text('ma',W/2,100,{align:'center'});
+  
+  // Línea decorativa
+  doc.setDrawColor(255,255,255);doc.setLineWidth(0.3);
+  doc.line(W/2-40,115,W/2+40,115);
+  
+  // Título informe
+  doc.setFontSize(22);doc.setFont('helvetica','bold');
+  doc.text('INFORME MENSUAL',W/2,135,{align:'center'});
+  doc.text('MONOTRIBUTO',W/2,148,{align:'center'});
+  
+  // Nombre cliente
+  doc.setFontSize(16);doc.setFont('helvetica','normal');
+  doc.text((c.nombre||'—').toUpperCase(),W/2,170,{align:'center'});
+  
+  // Mes y año
+  doc.setFontSize(14);
+  doc.text((mesNombre+' '+c.anio).toUpperCase(),W/2,183,{align:'center'});
+  
+  // Footer portada
+  doc.setFillColor(70,85,106);doc.rect(0,260,W,37,'F');
+  doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+  doc.text(cfg.nombre,W/2,273,{align:'center'});
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  doc.text(cfg.titulo,W/2,282,{align:'center'});
+
+  // Nueva página para el contenido
+  doc.addPage();
+  
+  // Header pequeño en páginas de contenido
   doc.setFillColor(88,103,126);doc.rect(0,0,W,44,'F');
   doc.setTextColor(255,255,255);
   doc.setFontSize(18);doc.setFont('helvetica','bold');
@@ -700,8 +759,94 @@ function generarPDF(){
     doc.text((diff>=0?'+ ':'')+'$'+fmt(diff),W-M-2,y+3.5,{align:'right'});y+=5;
   }
 
+  // ===== PÁGINA FINAL: CONTACTO =====
+  doc.addPage();
+  var cfg2=getCfg();
+  
+  // Fondo gris
+  doc.setFillColor(88,103,126);doc.rect(0,0,W,297,'F');
+  
+  // Monograma grande
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(72);doc.setFont('helvetica','normal');
+  doc.text('ma',W/2,110,{align:'center'});
+  
+  // Línea
+  doc.setDrawColor(255,255,255);doc.setLineWidth(0.3);
+  doc.line(W/2-50,125,W/2+50,125);
+  
+  // Gracias
+  doc.setFontSize(28);doc.setFont('helvetica','bold');
+  doc.text('MUCHAS GRACIAS',W/2,145,{align:'center'});
+  
+  // Datos de contacto
+  doc.setFontSize(11);doc.setFont('helvetica','normal');
+  doc.setTextColor(220,225,235);
+  var yc=168;var lh=9;
+  doc.text('Contacto',W/2,yc,{align:'center'});yc+=lh;
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');
+  doc.text(cfg2.nombre,W/2,yc,{align:'center'});yc+=lh;
+  doc.setFont('helvetica','normal');doc.setTextColor(220,225,235);
+  doc.text(cfg2.titulo,W/2,yc,{align:'center'});yc+=lh+3;
+  doc.text('Tel: '+cfg2.tel,W/2,yc,{align:'center'});yc+=lh;
+  doc.text('Mail: '+cfg2.mail,W/2,yc,{align:'center'});yc+=lh;
+  if(cfg2.ig)doc.text('Instagram: @'+cfg2.ig.replace('@',''),W/2,yc,{align:'center'});yc+=lh;
+  if(cfg2.li)doc.text('LinkedIn: '+cfg2.li,W/2,yc,{align:'center'});
+  
   doc.save('Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf');
 }
+
+
+
+// ===== CONFIGURACIÓN =====
+var defaultCfg = {
+  nombre: 'MARÍA SOLEDAD MONTOYA',
+  titulo: 'Gestión del Cambio y Mejora de Procesos',
+  cuit: '27-27657234-8',
+  tel: '362-4282433',
+  mail: 'masoledadmontoya@gmail.com',
+  ig: 'soledadmontoya.ok',
+  li: 'Soledad Montoya'
+};
+
+function loadCfg(){
+  try{var s=localStorage.getItem('mono_cfg');return s?JSON.parse(s):Object.assign({},defaultCfg);}
+  catch(e){return Object.assign({},defaultCfg);}
+}
+function saveCfgData(cfg){try{localStorage.setItem('mono_cfg',JSON.stringify(cfg));}catch(e){}}
+function getCfg(){return loadCfg();}
+
+function openSettings(){
+  var cfg=loadCfg();
+  document.getElementById('cfg-nombre').value=cfg.nombre||'';
+  document.getElementById('cfg-titulo').value=cfg.titulo||'';
+  document.getElementById('cfg-cuit').value=cfg.cuit||'';
+  document.getElementById('cfg-tel').value=cfg.tel||'';
+  document.getElementById('cfg-mail').value=cfg.mail||'';
+  document.getElementById('cfg-ig').value=cfg.ig||'';
+  document.getElementById('cfg-li').value=cfg.li||'';
+  document.getElementById('settings-modal').classList.add('open');
+}
+function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
+function saveSettings(){
+  var cfg={
+    nombre:document.getElementById('cfg-nombre').value||defaultCfg.nombre,
+    titulo:document.getElementById('cfg-titulo').value||defaultCfg.titulo,
+    cuit:document.getElementById('cfg-cuit').value||defaultCfg.cuit,
+    tel:document.getElementById('cfg-tel').value||defaultCfg.tel,
+    mail:document.getElementById('cfg-mail').value||defaultCfg.mail,
+    ig:document.getElementById('cfg-ig').value||defaultCfg.ig,
+    li:document.getElementById('cfg-li').value||defaultCfg.li
+  };
+  saveCfgData(cfg);
+  closeSettings();
+  alert('¡Datos guardados!');
+}
+
+// Cerrar modal al clickear afuera
+document.getElementById('settings-modal').addEventListener('click',function(e){
+  if(e.target===this)closeSettings();
+});
 
 loadData();
 // Migrar clientes viejos que no tienen meses inicializados
@@ -726,5 +871,28 @@ for(var i=0;i<appData.clients.length;i++){
 saveData();
 renderSidebar();
 </script>
+
+<!-- Botón configuración -->
+<button class="settings-btn" onclick="openSettings()" title="Configuración">⚙</button>
+
+<!-- Modal configuración -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <h2>⚙ Configuración · Mis datos</h2>
+    <div style="margin-bottom:14px"><label>Nombre completo</label><input type="text" id="cfg-nombre" placeholder="María Soledad Montoya"></div>
+    <div style="margin-bottom:14px"><label>Título / Especialidad</label><input type="text" id="cfg-titulo" placeholder="Gestión del Cambio y Mejora de Procesos"></div>
+    <div style="margin-bottom:14px" class="row g2">
+      <div><label>CUIT</label><input type="text" id="cfg-cuit" placeholder="27-27657234-8"></div>
+      <div><label>Teléfono / Celular</label><input type="text" id="cfg-tel" placeholder="362-4282433"></div>
+    </div>
+    <div style="margin-bottom:14px"><label>Email</label><input type="text" id="cfg-mail" placeholder="masoledadmontoya@gmail.com"></div>
+    <div style="margin-bottom:14px"><label>Instagram</label><input type="text" id="cfg-ig" placeholder="@soledadmontoya.ok"></div>
+    <div style="margin-bottom:14px"><label>LinkedIn</label><input type="text" id="cfg-li" placeholder="Soledad Montoya"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeSettings()">Cancelar</button>
+      <button class="btn-save" onclick="saveSettings()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
