@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Informes Monotributo · María Soledad Montoya</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:14px;color:#222;background:#f5f5f3;min-height:100vh}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.sidebar{background:#e8e8e4;border-right:1px solid #d0d0cc;padding:1.25rem;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.sidebar-logo{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;padding-bottom:10px;border-bottom:1px solid #d0d0cc}
+.sidebar-logo strong{display:block;font-size:13px;color:#444;text-transform:none;letter-spacing:0;margin-bottom:2px}
+.sidebar h3{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.client-item{padding:9px 11px;border-radius:8px;cursor:pointer;font-size:13px;color:#555;border:1px solid transparent;display:flex;justify-content:space-between;align-items:center}
+.client-item:hover{background:#fff;border-color:#ddd}
+.client-item.active{background:#fff;border-color:#c0c0b8;color:#222;font-weight:500}
+.client-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.del-btn{font-size:11px;color:#bbb;padding:0 4px;cursor:pointer}
+.del-btn:hover{color:#e05050}
+.btn-new{width:100%;border:1px dashed #bbb;background:transparent;border-radius:8px;padding:9px;font-size:13px;cursor:pointer;color:#888;margin-top:6px}
+.btn-new:hover{background:#fff}
+.main{padding:2rem;overflow-y:auto;background:#fafaf8}
+.page-title{font-size:20px;font-weight:600;color:#333;margin-bottom:1.5rem}
+.tabs{display:flex;gap:2px;margin-bottom:1.5rem;border-bottom:1px solid #e0e0da;flex-wrap:wrap}
+.tab{font-size:13px;padding:7px 14px;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:#444}
+.tab.active{color:#333;font-weight:500;border-bottom-color:#58677e}
+.tab-content{display:none}.tab-content.active{display:block}
+label{display:block;font-size:12px;color:#777;margin-bottom:4px;font-weight:500}
+input,select,textarea{width:100%;font-size:13px;border:1px solid #ddd;border-radius:6px;padding:7px 10px;background:#fff;color:#222;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#58677e}
+textarea{resize:vertical;min-height:52px}
+.row{display:grid;gap:12px;margin-bottom:14px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+.card{background:#fff;border:1px solid #e8e8e2;border-radius:12px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-title{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.85rem}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:7px 10px;border-radius:7px;background:#f8f8f6}
+.toggle-row label{margin:0;font-size:13px;color:#444;cursor:pointer;font-weight:400}
+input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#58677e}
+.rubro-row{display:grid;grid-template-columns:1fr 150px auto;gap:8px;margin-bottom:10px;align-items:end}
+.btn-add{font-size:12px;border:1px dashed #ccc;background:transparent;border-radius:7px;padding:6px 14px;cursor:pointer;color:#888}
+.btn-add:hover{background:#f5f5f3}
+.btn-remove{background:transparent;border:none;color:#ccc;cursor:pointer;padding:6px 8px;font-size:16px;border-radius:6px}
+.btn-remove:hover{color:#e05050;background:#fff0f0}
+.month-table{width:100%;border-collapse:collapse}
+.month-table th{font-size:11px;color:#aaa;font-weight:600;padding:6px 8px;text-align:right;border-bottom:1px solid #eee;background:#fafaf8}
+.month-table th:first-child{text-align:left}
+.month-table td{padding:4px 5px;border-bottom:1px solid #f0f0ec}
+.month-table td input{font-size:12px;text-align:right;border:1px solid transparent;background:transparent;padding:3px 6px;border-radius:5px;width:100%;color:#333}
+.month-table td input:focus{background:#fff;border-color:#ddd;outline:none}
+.month-table td:first-child{font-size:12px;color:#aaa;padding-left:4px;width:42px;font-weight:500}
+.month-table tr:hover td{background:#fafaf8}
+.month-table tr.total-row td{font-size:12px;font-weight:600;background:#f0f0ec;padding:6px 5px;color:#444}
+.total-row td:first-child{padding-left:8px}
+.btn-pdf{background:#58677e;color:#fff;border:none;border-radius:9px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:.75rem}
+.btn-pdf:hover{background:#46556a}
+.empty-state{text-align:center;padding:5rem 2rem;color:#bbb}
+.empty-state p{font-size:15px;margin-bottom:1.25rem;color:#aaa}
+.preview-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0ec;font-size:13px}
+.preview-label{color:#999}
+.preview-val{color:#333;font-weight:500}
+.section-sep{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px;padding-top:10px;border-top:1px solid #eee}
+.opt-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;background:#eef2f7;color:#58677e;margin-left:6px;font-weight:600}
+.alert-info{background:#eef2f7;border:1px solid #c8d4e3;border-radius:8px;padding:10px 14px;font-size:13px;color:#58677e;margin-bottom:1rem}
+.resumen-table{width:100%;border-collapse:collapse;margin-bottom:1rem}
+.resumen-table td{padding:8px 10px;border-bottom:1px solid #f0f0ec;font-size:13px}
+.resumen-table td:last-child{text-align:right;font-weight:500;color:#333}
+.resumen-table td:first-child{color:#777}
+.resumen-table tr.subtotal td{background:#f8f8f6;font-weight:600;color:#444}
+.resumen-table tr.total-gastos td{background:#fff3f0;font-weight:600;color:#c0392b}
+.resumen-table tr.ganancia td{background:#f0faf4;font-weight:600;color:#27ae60;font-size:14px}
+.resumen-table tr.porcentaje td{background:#f8f8f6;color:#666}
+.recat-box{background:#fff;border:1px solid #e8e8e2;border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.recat-title{font-size:12px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem}
+.recat-number{font-size:28px;font-weight:700;color:#58677e;margin-bottom:.5rem}
+.cat-table{width:100%;border-collapse:collapse}
+.cat-table th{font-size:11px;color:#aaa;font-weight:600;padding:6px 10px;text-align:left;border-bottom:1px solid #eee;background:#fafaf8}
+.cat-table td{padding:7px 10px;border-bottom:1px solid #f0f0ec;font-size:12px}
+.cat-table tr.actual td{background:#eef7ff;font-weight:600;color:#1a5c9e}
+.cat-table tr.siguiente td{background:#fff8e6;font-weight:600;color:#8a6200}
+.cat-table tr.excedido td{background:#fff0f0;color:#c0392b}
+.badge-ok{display:inline-block;background:#e8f8ed;color:#27ae60;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:600}
+.badge-warn{display:inline-block;background:#fff8e6;color:#e67e22;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:600}
+.badge-danger{display:inline-block;background:#fff0f0;color:#c0392b;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:600}
+.pct-bar-wrap{background:#eee;border-radius:10px;height:8px;margin-top:6px;overflow:hidden}
+.pct-bar{height:8px;border-radius:10px;background:#58677e}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <strong>María Soledad Montoya</strong>
+      Gestión del Cambio · Informes Monotributo
+    </div>
+    <h3>Clientes</h3>
+    <div id="client-list"></div>
+    <button class="btn-new" onclick="newClient()">+ Nuevo cliente</button>
+  </div>
+  <div class="main" id="main-area">
+    <div class="empty-state">
+      <p>Seleccioná un cliente o creá uno nuevo para comenzar.</p>
+      <button class="btn-new" style="width:auto;padding:10px 22px;border-radius:8px" onclick="newClient()">+ Nuevo cliente</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MESES_FULL=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// Tabla de categorías vigentes 2026
+const CATEGORIAS_2026 = [
+  {cat:'A', limite:10277988.13}, {cat:'B', limite:15058447.71}, {cat:'C', limite:21113696.52},
+  {cat:'D', limite:26212853.42}, {cat:'E', limite:30833964.37}, {cat:'F', limite:38642048.36},
+  {cat:'G', limite:46211109.37}, {cat:'H', limite:70113407.33}, {cat:'I', limite:78479211.62},
+  {cat:'J', limite:89872640.30}, {cat:'K', limite:108357084.05}
+];
+
+var appData = {clients:[]};
+var currentId = null;
+
+function saveData(){try{localStorage.setItem('mono_v5',JSON.stringify(appData.clients));}catch(e){}}
+function loadData(){try{var s=localStorage.getItem('mono_v5');if(s)appData.clients=JSON.parse(s);}catch(e){appData.clients=[];}}
+function getClient(){for(var i=0;i<appData.clients.length;i++){if(appData.clients[i].id===currentId)return appData.clients[i];}return null;}
+
+function newClient(){
+  var c={
+    id:'c'+Date.now(), nombre:'', cuit:'', domicilio:'', categoria:'E',
+    rubros:[{nombre:'Facturación principal',tipo:'servicios'}],
+    meses:[], vencFecha:'', vencImporte:'',
+    arcaDeuda:false, arcaDeudor:'', arcaMensual:'', arcaNota:'',
+    atpAldia:true, atpDeuda:'',
+    tieneTasasNac:false, tasaUS:'', tasaCNT:'',
+    tieneTasaMunicipal:false, tasaMunicipal:'', municipio:'',
+    tieneMipyme:false, mipymeVence:'', mipymeCat:'Micro',
+    // Gastos
+    tieneFactRec:true, // facturas recibidas reales
+    tienePctCompras:false, pctCompras:30, // % estimado
+    tieneAlquiler:false, alquiler:'',
+    tieneLuz:false, luz:'',
+    tieneInternet:false, internet:'',
+    tieneRentas:false, rentas:'', labelRentas:'Rentas / DGR',
+    tieneOtrosGastos:false, otrosGastos:'', labelOtros:'Otros gastos',
+    // Recategorización
+    recatFecha:'julio', // 'enero' o 'julio'
+    semAnterior:'', // acumulado semestre anterior manual
+    anio:String(new Date().getFullYear()),
+    mesInforme:String(new Date().getMonth())
+  };
+  for(var i=0;i<12;i++) c.meses.push({});
+  appData.clients.push(c); saveData();
+  currentId=c.id; renderSidebar(); renderMain();
+}
+
+function selectClient(id){currentId=id;renderSidebar();renderMain();}
+function deleteClient(id,e){
+  e.stopPropagation();
+  if(!confirm('¿Eliminar este cliente?'))return;
+  appData.clients=appData.clients.filter(function(c){return c.id!==id;});
+  if(currentId===id)currentId=null;
+  saveData();renderSidebar();
+  if(!currentId)document.getElementById('main-area').innerHTML='<div class="empty-state"><p>Seleccioná un cliente o creá uno nuevo.</p><button class="btn-new" style="width:auto;padding:10px 22px;border-radius:8px" onclick="newClient()">+ Nuevo cliente</button></div>';
+  else renderMain();
+}
+
+function renderSidebar(){
+  var el=document.getElementById('client-list'),html='';
+  for(var i=0;i<appData.clients.length;i++){
+    var c=appData.clients[i],a=c.id===currentId?' active':'';
+    html+='<div class="client-item'+a+'" onclick="selectClient(\''+c.id+'\')">';
+    html+='<span class="client-name">'+(c.nombre||'Sin nombre')+'</span>';
+    html+='<span class="del-btn" onclick="deleteClient(\''+c.id+'\',event)">✕</span></div>';
+  }
+  el.innerHTML=html;
+}
+
+function up(f,v){var c=getClient();if(!c)return;c[f]=v;saveData();if(f==='nombre')renderSidebar();}
+function upMes(mi,ri,v){var c=getClient();if(!c)return;if(!c.meses[mi])c.meses[mi]={};c.meses[mi][ri]=v;saveData();calcTotales();}
+
+function getVal(c,mes,rubro){return parseFloat((c.meses[mes]&&c.meses[mes][rubro])?c.meses[mes][rubro]:0);}
+
+function calcTotales(){
+  var c=getClient();if(!c)return;
+  var nR=c.rubros.length,tots=[],grand=0;
+  for(var i=0;i<nR;i++)tots.push(0);
+  for(var m=0;m<12;m++){
+    var rowT=0;
+    for(var r=0;r<nR;r++){var v=getVal(c,m,r);tots[r]+=v;rowT+=v;}
+    var rt=document.getElementById('rowt-'+m);if(rt)rt.textContent=rowT>0?'$'+rowT.toLocaleString('es-AR',{maximumFractionDigits:0}):'';
+    grand+=rowT;
+  }
+  for(var r=0;r<nR;r++){var el=document.getElementById('colt-'+r);if(el)el.textContent=tots[r]>0?'$'+tots[r].toLocaleString('es-AR',{maximumFractionDigits:0}):'';}
+  var gt=document.getElementById('grand-total');if(gt)gt.textContent=grand>0?'$'+grand.toLocaleString('es-AR',{maximumFractionDigits:0}):'';
+  // Actualizar gastos en tiempo real
+  var gr=document.getElementById('gastos-resumen-inline');if(gr)renderGastosInline(c,grand);
+}
+
+function getTotalFact(c){
+  var t=0;
+  for(var m=0;m<12;m++)for(var r=0;r<c.rubros.length;r++)t+=getVal(c,m,r);
+  return t;
+}
+
+function getGastos(c){
+  var total=getTotalFact(c);
+  var gastos=[];
+  // Facturas recibidas por mes
+  var factRecTotal=0;
+  for(var m=0;m<12;m++){var v=parseFloat((c.meses[m]&&c.meses[m]['fr'])?c.meses[m]['fr']:0);factRecTotal+=v;}
+  if(c.tieneFactRec&&factRecTotal>0)gastos.push({label:'Facturas recibidas',val:factRecTotal});
+  // % estimado
+  if(c.tienePctCompras){
+    var pct=parseFloat(c.pctCompras||0)/100;
+    var estimado=total*pct;
+    gastos.push({label:'Compras estimadas ('+c.pctCompras+'% facturación)',val:estimado});
+  }
+  // ATP/Monotributo - ya están en obligaciones, los sumamos del total
+  var monoTotal=0;
+  for(var m=0;m<12;m++){var v=parseFloat(c.vencImporte||0);break;} // Usamos acumulado de pagos
+  // Sumar gastos fijos
+  if(c.tieneAlquiler&&c.alquiler)gastos.push({label:'Alquiler',val:parseFloat(c.alquiler)*12});
+  if(c.tieneLuz&&c.luz)gastos.push({label:'Luz',val:parseFloat(c.luz)*12});
+  if(c.tieneInternet&&c.internet)gastos.push({label:'Internet / Celular',val:parseFloat(c.internet)*12});
+  if(c.tieneRentas&&c.rentas)gastos.push({label:c.labelRentas||'Rentas / DGR',val:parseFloat(c.rentas)});
+  if(c.tieneOtrosGastos&&c.otrosGastos)gastos.push({label:c.labelOtros||'Otros gastos',val:parseFloat(c.otrosGastos)});
+  return gastos;
+}
+
+function getGastosConOblig(c){
+  var gastos=getGastos(c);
+  // Agregar obligaciones anuales
+  var atpTotal=0;for(var m=0;m<12;m++){var v=parseFloat((c.meses[m]&&c.meses[m]['atp'])?c.meses[m]['atp']:0);atpTotal+=v;}
+  var monoTotal=0;for(var m=0;m<12;m++){var v=parseFloat((c.meses[m]&&c.meses[m]['mono'])?c.meses[m]['mono']:0);monoTotal+=v;}
+  var tusTotal=0;for(var m=0;m<12;m++){var v=parseFloat((c.meses[m]&&c.meses[m]['tus'])?c.meses[m]['tus']:0);tusTotal+=v;}
+  var cntTotal=0;for(var m=0;m<12;m++){var v=parseFloat((c.meses[m]&&c.meses[m]['cnt'])?c.meses[m]['cnt']:0);cntTotal+=v;}
+  var munTotal=0;for(var m=0;m<12;m++){var v=parseFloat((c.meses[m]&&c.meses[m]['mun'])?c.meses[m]['mun']:0);munTotal+=v;}
+  if(atpTotal>0)gastos.push({label:'ATP (anual)',val:atpTotal});
+  if(monoTotal>0)gastos.push({label:'Monotributo (anual)',val:monoTotal});
+  if(tusTotal>0)gastos.push({label:'TUSV (anual)',val:tusTotal});
+  if(cntTotal>0)gastos.push({label:'CNT (anual)',val:cntTotal});
+  if(munTotal>0)gastos.push({label:'Tasa Municipal (anual)',val:munTotal});
+  return gastos;
+}
+
+function addRubro(){var c=getClient();if(!c||c.rubros.length>=5)return;c.rubros.push({nombre:'',tipo:'servicios'});saveData();renderMain();}
+function removeRubro(i){
+  var c=getClient();if(!c||c.rubros.length<=1)return;
+  c.rubros.splice(i,1);
+  for(var m=0;m<12;m++){if(c.meses[m]){var nm={};var ks=Object.keys(c.meses[m]);for(var k=0;k<ks.length;k++){var ki=parseInt(ks[k]);if(!isNaN(ki)){if(ki<i)nm[ki]=c.meses[m][ks[k]];else if(ki>i)nm[ki-1]=c.meses[m][ks[k]];}else nm[ks[k]]=c.meses[m][ks[k]];}c.meses[m]=nm;}}
+  saveData();renderMain();
+}
+function upRubro(i,f,v){var c=getClient();if(!c)return;c.rubros[i][f]=v;saveData();if(f==='nombre'){var th=document.getElementById('rth-'+i);if(th)th.textContent=v||('Rubro '+(i+1));}}
+
+function renderMain(){
+  var c=getClient();
+  if(!c){document.getElementById('main-area').innerHTML='<div class="empty-state"><p>Seleccioná un cliente.</p></div>';return;}
+
+  var mesOpts='';for(var i=0;i<MESES_FULL.length;i++)mesOpts+='<option value="'+i+'"'+(String(c.mesInforme)==String(i)?' selected':'')+'>'+MESES_FULL[i]+'</option>';
+  var catOpts='';var cats=['A','B','C','D','E','F','G','H','I','J','K'];for(var i=0;i<cats.length;i++)catOpts+='<option'+(c.categoria===cats[i]?' selected':'')+'>'+cats[i]+'</option>';
+
+  var rubrosHtml='';
+  for(var i=0;i<c.rubros.length;i++){
+    var r=c.rubros[i];
+    rubrosHtml+='<div class="rubro-row"><div><label>Rubro '+(i+1)+'</label><input type="text" value="'+(r.nombre||'')+'" placeholder="Ej: Facturación cabañas" oninput="upRubro('+i+',\'nombre\',this.value)"></div>';
+    rubrosHtml+='<div><label>Tipo</label><select onchange="upRubro('+i+',\'tipo\',this.value)"><option value="servicios"'+(r.tipo==='servicios'?' selected':'')+'>Servicios</option><option value="productos"'+(r.tipo==='productos'?' selected':'')+'>Productos</option></select></div>';
+    rubrosHtml+=c.rubros.length>1?'<button class="btn-remove" onclick="removeRubro('+i+')">×</button>':'<div></div>';
+    rubrosHtml+='</div>';
+  }
+
+  var thRubros='';for(var i=0;i<c.rubros.length;i++)thRubros+='<th id="rth-'+i+'">'+(c.rubros[i].nombre||'Rubro '+(i+1))+'</th>';
+  var totRubros='';for(var i=0;i<c.rubros.length;i++)totRubros+='<td id="colt-'+i+'" style="text-align:right;color:#aaa"></td>';
+
+  var filas='';
+  for(var m=0;m<12;m++){
+    filas+='<tr><td>'+MESES[m]+'</td>';
+    for(var r=0;r<c.rubros.length;r++){
+      var v=(c.meses[m]&&c.meses[m][r])?c.meses[m][r]:'';
+      filas+='<td><input type="number" value="'+v+'" placeholder="0" oninput="upMes('+m+','+r+',this.value)"></td>';
+    }
+    // Columna facturas recibidas
+    var fr=(c.meses[m]&&c.meses[m]['fr'])?c.meses[m]['fr']:'';
+    if(c.tieneFactRec)filas+='<td><input type="number" value="'+fr+'" placeholder="0" style="border-color:#dde8ff" oninput="upMes('+m+',\'fr\',this.value)"></td>';
+    // Columna ATP mensual
+    var atp=(c.meses[m]&&c.meses[m]['atp'])?c.meses[m]['atp']:'';
+    filas+='<td><input type="number" value="'+atp+'" placeholder="0" style="border-color:#ffdde8" oninput="upMes('+m+',\'atp\',this.value)"></td>';
+    // Columna monotributo mensual
+    var mono=(c.meses[m]&&c.meses[m]['mono'])?c.meses[m]['mono']:'';
+    filas+='<td><input type="number" value="'+mono+'" placeholder="0" style="border-color:#ffdde8" oninput="upMes('+m+',\'mono\',this.value)"></td>';
+    filas+='<td id="rowt-'+m+'" style="text-align:right;color:#aaa;padding-right:6px;font-size:12px"></td></tr>';
+  }
+  var thFR=c.tieneFactRec?'<th style="color:#446">Fact. Recibidas</th>':'';
+
+  // Sección gastos opcionales
+  var gastosOpc='';
+  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g1"'+(c.tieneFactRec?' checked':'')+' onchange="up(\'tieneFactRec\',this.checked);renderMain()"><label for="g1">Tiene facturas recibidas (mercadería / compras reales)</label></div>';
+  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g2"'+(c.tienePctCompras?' checked':'')+' onchange="up(\'tienePctCompras\',this.checked);renderMain()"><label for="g2">Estimar compras por porcentaje (sin facturas)</label></div>';
+  if(c.tienePctCompras){
+    gastosOpc+='<div class="row g2" style="margin:8px 0 4px 28px"><div><label>% estimado de compras sobre facturación</label><input type="number" value="'+(c.pctCompras||30)+'" min="0" max="100" oninput="up(\'pctCompras\',this.value)"></div></div>';
+  }
+  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g3"'+(c.tieneAlquiler?' checked':'')+' onchange="up(\'tieneAlquiler\',this.checked);renderMain()"><label for="g3">Paga alquiler</label></div>';
+  if(c.tieneAlquiler)gastosOpc+='<div class="row g2" style="margin:0 0 8px 28px"><div><label>Importe mensual ($)</label><input type="number" value="'+(c.alquiler||'')+'" placeholder="Ej: 220000" oninput="up(\'alquiler\',this.value)"></div></div>';
+  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g4"'+(c.tieneLuz?' checked':'')+' onchange="up(\'tieneLuz\',this.checked);renderMain()"><label for="g4">Paga luz</label></div>';
+  if(c.tieneLuz)gastosOpc+='<div class="row g2" style="margin:0 0 8px 28px"><div><label>Importe mensual ($)</label><input type="number" value="'+(c.luz||'')+'" placeholder="Ej: 40000" oninput="up(\'luz\',this.value)"></div></div>';
+  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g5"'+(c.tieneInternet?' checked':'')+' onchange="up(\'tieneInternet\',this.checked);renderMain()"><label for="g5">Paga internet / celular</label></div>';
+  if(c.tieneInternet)gastosOpc+='<div class="row g2" style="margin:0 0 8px 28px"><div><label>Importe mensual ($)</label><input type="number" value="'+(c.internet||'')+'" placeholder="Ej: 40000" oninput="up(\'internet\',this.value)"></div></div>';
+  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g6"'+(c.tieneRentas?' checked':'')+' onchange="up(\'tieneRentas\',this.checked);renderMain()"><label for="g6">Paga Rentas / DGR provincial</label></div>';
+  if(c.tieneRentas){
+    gastosOpc+='<div class="row g2" style="margin:0 0 8px 28px"><div><label>Nombre (ej: Rentas, DGR Corrientes)</label><input type="text" value="'+(c.labelRentas||'Rentas / DGR')+'" oninput="up(\'labelRentas\',this.value)"></div><div><label>Importe anual total ($)</label><input type="number" value="'+(c.rentas||'')+'" oninput="up(\'rentas\',this.value)"></div></div>';
+  }
+  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g7"'+(c.tieneOtrosGastos?' checked':'')+' onchange="up(\'tieneOtrosGastos\',this.checked);renderMain()"><label for="g7">Otros gastos</label></div>';
+  if(c.tieneOtrosGastos){
+    gastosOpc+='<div class="row g2" style="margin:0 0 8px 28px"><div><label>Descripción</label><input type="text" value="'+(c.labelOtros||'Otros gastos')+'" oninput="up(\'labelOtros\',this.value)"></div><div><label>Importe anual total ($)</label><input type="number" value="'+(c.otrosGastos||'')+'" oninput="up(\'otrosGastos\',this.value)"></div></div>';
+  }
+
+  // Secciones opcionales obligaciones
+  var tasasNacHtml=c.tieneTasasNac?'<div class="card"><div class="card-title">Tasas nacionales <span class="opt-tag">TUSV / CNT</span></div><p style="font-size:12px;color:#aaa;margin-bottom:10px">Se cargan mes a mes en la tabla de facturación</p></div>':'';
+  var tasaMunHtml=c.tieneTasaMunicipal?'<div class="card"><div class="card-title">Tasa Municipal de Industria y Comercio</div><div class="row g2"><div><label>Municipio</label><input type="text" value="'+(c.municipio||'')+'" placeholder="Ej: Resistencia" oninput="up(\'municipio\',this.value)"></div></div><p style="font-size:12px;color:#aaa;margin-top:4px">Se carga mes a mes en la tabla de facturación</p></div>':'';
+  var mipymeHtml=c.tieneMipyme?'<div class="card"><div class="card-title">Certificado MiPyme</div><div class="row g2"><div><label>Válido hasta</label><input type="date" value="'+(c.mipymeVence||'')+'" onchange="up(\'mipymeVence\',this.value)"></div><div><label>Categoría</label><select onchange="up(\'mipymeCat\',this.value)"><option'+((c.mipymeCat||'Micro')==='Micro'?' selected':'')+'>Micro</option><option'+(c.mipymeCat==='Pequeña'?' selected':'')+'>Pequeña</option><option'+(c.mipymeCat==='Mediana'?' selected':'')+'>Mediana</option></select></div></div></div>':'';
+
+  var arcaHtml=c.arcaDeuda?'<div class="row g2"><div><label>Saldo deudor ($)</label><input type="number" value="'+(c.arcaDeudor||'')+'" oninput="up(\'arcaDeudor\',this.value)"></div><div><label>Obligación mensual ($)</label><input type="number" value="'+(c.arcaMensual||'')+'" oninput="up(\'arcaMensual\',this.value)"></div></div><div><label>Nota</label><textarea oninput="up(\'arcaNota\',this.value)">'+(c.arcaNota||'')+'</textarea></div>':'<p style="font-size:13px;color:#aaa;padding:4px 0">Sin deuda · Al día</p>';
+  var atpHtml=!c.atpAldia?'<div><label>Deuda pendiente ($)</label><input type="number" value="'+(c.atpDeuda||'')+'" oninput="up(\'atpDeuda\',this.value)"></div>':'<p style="font-size:13px;color:#aaa;padding:4px 0">Al día</p>';
+
+  document.getElementById('main-area').innerHTML=
+    '<div class="page-title">'+(c.nombre||'Nuevo cliente')+'</div>'+
+    '<div class="tabs">'+
+      '<div class="tab active" onclick="showTab(\'perfil\',this)">Perfil</div>'+
+      '<div class="tab" onclick="showTab(\'facturacion\',this)">Facturación</div>'+
+      '<div class="tab" onclick="showTab(\'obligaciones\',this)">Obligaciones</div>'+
+      '<div class="tab" onclick="showTab(\'gastos\',this)">Gastos y Ganancia</div>'+
+      '<div class="tab" onclick="showTab(\'recat\',this)">Recategorización</div>'+
+      '<div class="tab" onclick="showTab(\'preview\',this)">Vista previa y PDF</div>'+
+    '</div>'+
+
+    // PERFIL
+    '<div class="tab-content active" id="tab-perfil">'+
+      '<div class="card"><div class="card-title">Datos del cliente</div>'+
+        '<div class="row g2"><div><label>Nombre y apellido</label><input type="text" value="'+(c.nombre||'')+'" placeholder="Ej: Mariana Salemi" oninput="up(\'nombre\',this.value)"></div>'+
+        '<div><label>CUIT</label><input type="text" value="'+(c.cuit||'')+'" placeholder="27-00000000-0" oninput="up(\'cuit\',this.value)"></div></div>'+
+        '<div class="row g2"><div><label>Categoría monotributo</label><select onchange="up(\'categoria\',this.value)">'+catOpts+'</select></div>'+
+        '<div><label>Dependencia ARCA</label><input type="text" value="'+(c.domicilio||'')+'" placeholder="Ej: Agencia-Sede Resistencia" oninput="up(\'domicilio\',this.value)"></div></div>'+
+        '<div class="row g2"><div><label>Mes del informe</label><select onchange="up(\'mesInforme\',this.value)">'+mesOpts+'</select></div>'+
+        '<div><label>Año</label><input type="number" value="'+(c.anio||'')+'" oninput="up(\'anio\',this.value)"></div></div>'+
+      '</div>'+
+      '<div class="card"><div class="card-title">Rubros de facturación</div>'+rubrosHtml+
+        (c.rubros.length<5?'<button class="btn-add" onclick="addRubro()">+ Agregar rubro</button>':'')+
+      '</div>'+
+      '<div class="card"><div class="card-title">Gastos del cliente</div>'+
+        '<p style="font-size:12px;color:#aaa;margin-bottom:12px">Activá los gastos que aplican a este cliente. Se usan para calcular la ganancia.</p>'+
+        gastosOpc+
+      '</div>'+
+      '<div class="card"><div class="card-title">Secciones opcionales · Obligaciones</div>'+
+        '<div class="toggle-row"><input type="checkbox" id="chk1"'+(c.arcaDeuda?' checked':'')+' onchange="up(\'arcaDeuda\',this.checked);renderMain()"><label for="chk1">Tiene deuda en ARCA</label></div>'+
+        '<div class="toggle-row"><input type="checkbox" id="chk2"'+(!c.atpAldia?' checked':'')+' onchange="up(\'atpAldia\',!this.checked);renderMain()"><label for="chk2">Tiene deuda en ATP</label></div>'+
+        '<div class="toggle-row"><input type="checkbox" id="chk3"'+(c.tieneTasasNac?' checked':'')+' onchange="up(\'tieneTasasNac\',this.checked);renderMain()"><label for="chk3">Paga tasas nacionales (TUSV / CNT)</label></div>'+
+        '<div class="toggle-row"><input type="checkbox" id="chk4"'+(c.tieneTasaMunicipal?' checked':'')+' onchange="up(\'tieneTasaMunicipal\',this.checked);renderMain()"><label for="chk4">Paga Tasa Municipal de Industria y Comercio</label></div>'+
+        '<div class="toggle-row"><input type="checkbox" id="chk5"'+(c.tieneMipyme?' checked':'')+' onchange="up(\'tieneMipyme\',this.checked);renderMain()"><label for="chk5">Tiene certificado MiPyme</label></div>'+
+      '</div>'+
+    '</div>'+
+
+    // FACTURACIÓN
+    '<div class="tab-content" id="tab-facturacion">'+
+      '<div class="card"><div class="card-title">Ingresos y gastos mensuales · '+c.anio+'</div>'+
+        '<p style="font-size:12px;color:#aaa;margin-bottom:12px">Completá mes a mes. Las columnas rosadas son obligaciones mensuales (ATP y Monotributo).</p>'+
+        '<div style="overflow-x:auto"><table class="month-table">'+
+          '<thead><tr><th>Mes</th>'+thRubros+thFR+
+          '<th style="color:#c04060">ATP</th><th style="color:#c04060">Monotributo</th>'+
+          '<th style="text-align:right">Total</th></tr></thead>'+
+          '<tbody>'+filas+'</tbody>'+
+          '<tfoot><tr class="total-row"><td>Total</td>'+totRubros+
+          (c.tieneFactRec?'<td></td>':'')+
+          '<td></td><td></td>'+
+          '<td id="grand-total" style="text-align:right"></td></tr></tfoot>'+
+        '</table></div>'+
+      '</div>'+
+    '</div>'+
+
+    // OBLIGACIONES
+    '<div class="tab-content" id="tab-obligaciones">'+
+      '<div class="card"><div class="card-title">Próximo vencimiento</div>'+
+        '<div class="row g2"><div><label>Fecha</label><input type="date" value="'+(c.vencFecha||'')+'" onchange="up(\'vencFecha\',this.value)"></div>'+
+        '<div><label>Importe ($)</label><input type="number" value="'+(c.vencImporte||'')+'" placeholder="Ej: 142173.97" oninput="up(\'vencImporte\',this.value)"></div></div>'+
+      '</div>'+
+      '<div class="card"><div class="card-title">ARCA</div>'+arcaHtml+'</div>'+
+      '<div class="card"><div class="card-title">ATP</div>'+atpHtml+'</div>'+
+      (c.tieneTasaMunicipal?tasaMunHtml:'')+
+      (c.tieneMipyme?mipymeHtml:'')+
+    '</div>'+
+
+    // GASTOS Y GANANCIA
+    '<div class="tab-content" id="tab-gastos"><div id="gastos-resumen-inline"></div></div>'+
+
+    // RECATEGORIZACIÓN
+    '<div class="tab-content" id="tab-recat">'+
+      '<div class="card"><div class="card-title">Configuración de recategorización</div>'+
+        '<div class="row g2">'+
+          '<div><label>Próxima recategorización</label>'+
+            '<select onchange="up(\'recatFecha\',this.value)">'+
+              '<option value="enero"'+(c.recatFecha==='enero'?' selected':'')+'>Enero</option>'+
+              '<option value="julio"'+(c.recatFecha==='julio'?' selected':'')+'>Julio</option>'+
+            '</select>'+
+          '</div>'+
+          '<div><label>Acumulado semestre anterior ($)</label>'+
+            '<input type="number" value="'+(c.semAnterior||'')+'" placeholder="Ej: 12500000" oninput="up(\'semAnterior\',this.value)" onblur="renderRecatTab()">'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div id="recat-resultado"></div>'+
+    '</div>'+
+
+    // PREVIEW
+    '<div class="tab-content" id="tab-preview">'+
+      '<div class="alert-info">Revisá los datos antes de generar el PDF.</div>'+
+      '<div class="card" id="preview-data"></div>'+
+      '<button class="btn-pdf" onclick="generarPDF()">Descargar PDF del informe</button>'+
+    '</div>';
+
+  calcTotales();
+  renderGastosInline(c, getTotalFact(c));
+  renderRecatTab();
+}
+
+function renderGastosInline(c, totalFact){
+  var el=document.getElementById('gastos-resumen-inline');if(!el)return;
+  if(!totalFact)totalFact=getTotalFact(c);
+  var gastos=getGastosConOblig(c);
+  var totalGastos=0;for(var i=0;i<gastos.length;i++)totalGastos+=gastos[i].val;
+  var ganancia=totalFact-totalGastos;
+  var pct=totalFact>0?(totalGastos/totalFact*100):0;
+
+  var html='<div class="card"><div class="card-title">Resumen de gastos · '+c.anio+'</div>'+
+    '<table class="resumen-table">'+
+    '<tr><td>Total facturación</td><td>$'+fmt(totalFact)+'</td></tr>';
+  for(var i=0;i<gastos.length;i++)html+='<tr><td>'+gastos[i].label+'</td><td>- $'+fmt(gastos[i].val)+'</td></tr>';
+  html+='<tr class="total-gastos"><td>Total gastos</td><td>$'+fmt(totalGastos)+'</td></tr>'+
+    '<tr class="ganancia"><td>Ganancia del año</td><td>$'+fmt(ganancia)+'</td></tr>'+
+    '<tr class="porcentaje"><td>% Gastos / Facturación</td><td>'+pct.toFixed(1)+'%</td></tr>'+
+    '</table>'+
+    '<div><div class="pct-bar-wrap"><div class="pct-bar" style="width:'+Math.min(pct,100)+'%;background:'+(pct>80?'#c0392b':pct>50?'#e67e22':'#27ae60')+'"></div></div>'+
+    '<p style="font-size:11px;color:#aaa;margin-top:4px">'+pct.toFixed(1)+'% de la facturación se destina a gastos</p></div>'+
+  '</div>';
+  el.innerHTML=html;
+}
+
+function renderRecatTab(){
+  var c=getClient();if(!c)return;
+  var el=document.getElementById('recat-resultado');if(!el)return;
+  var totalFact=getTotalFact(c);
+  var semAnt=parseFloat(c.semAnterior||0);
+  var acumulado=totalFact+semAnt;
+  var catActual=null,catSiguiente=null;
+  for(var i=0;i<CATEGORIAS_2026.length;i++){
+    if(CATEGORIAS_2026[i].cat===c.categoria){catActual=CATEGORIAS_2026[i];if(i+1<CATEGORIAS_2026.length)catSiguiente=CATEGORIAS_2026[i+1];break;}
+  }
+  var margen=catActual?catActual.limite-acumulado:0;
+  var badge='';
+  if(!catActual)badge='<span class="badge-warn">Categoría no encontrada</span>';
+  else if(margen<0)badge='<span class="badge-danger">Excedido por $'+fmt(Math.abs(margen))+'</span>';
+  else if(margen<catActual.limite*0.1)badge='<span class="badge-warn">Margen ajustado</span>';
+  else badge='<span class="badge-ok">Dentro de la categoría</span>';
+
+  var html='<div class="recat-box"><div class="recat-title">Acumulado para recategorización '+c.recatFecha+' '+(parseInt(c.anio)+1)+'</div>'+
+    '<div class="recat-number">$'+fmt(acumulado)+'</div>'+badge+
+    '<div style="font-size:12px;color:#aaa;margin-top:8px">'+
+    '<span>Sem. anterior: $'+fmt(semAnt)+'</span> + <span>Facturación actual: $'+fmt(totalFact)+'</span></div>'+
+  '</div>'+
+  '<div class="card"><div class="card-title">Límites de categorías vigentes 2026</div>'+
+  '<table class="cat-table"><thead><tr><th>Cat.</th><th>Límite anual</th><th>Diferencia con acumulado</th></tr></thead><tbody>';
+  for(var i=0;i<CATEGORIAS_2026.length;i++){
+    var cat=CATEGORIAS_2026[i];
+    var diff=cat.limite-acumulado;
+    var cls='';
+    if(cat.cat===c.categoria)cls=' class="actual"';
+    else if(catSiguiente&&cat.cat===catSiguiente.cat)cls=' class="siguiente"';
+    else if(diff<0)cls=' class="excedido"';
+    html+='<tr'+cls+'><td><strong>'+cat.cat+'</strong></td><td>$'+fmt(cat.limite)+'</td><td style="color:'+(diff>=0?'#27ae60':'#c0392b')+'">'+(diff>=0?'+':'')+('$'+fmt(diff))+'</td></tr>';
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function showTab(id,el){
+  document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+  var c=getClient();
+  if(id==='preview'&&c)buildPreview(c);
+  if(id==='gastos'&&c){renderGastosInline(c,getTotalFact(c));}
+  if(id==='recat')renderRecatTab();
+}
+
+function fmt(n){return parseFloat(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtN(n){return parseFloat(n||0).toLocaleString('es-AR',{maximumFractionDigits:0});}
+
+function buildPreview(c){
+  var totalFact=getTotalFact(c);
+  var gastos=getGastosConOblig(c);
+  var totalGastos=0;for(var i=0;i<gastos.length;i++)totalGastos+=gastos[i].val;
+  var ganancia=totalFact-totalGastos;
+  var pct=totalFact>0?(totalGastos/totalFact*100):0;
+  var mesNombre=MESES_FULL[parseInt(c.mesInforme||0)];
+  var semAnt=parseFloat(c.semAnterior||0);
+  var acumulado=totalFact+semAnt;
+
+  var html='<div class="section-sep">Datos del cliente</div>'+
+    '<div class="preview-row"><span class="preview-label">Nombre</span><span class="preview-val">'+(c.nombre||'—')+'</span></div>'+
+    '<div class="preview-row"><span class="preview-label">CUIT</span><span class="preview-val">'+(c.cuit||'—')+'</span></div>'+
+    '<div class="preview-row"><span class="preview-label">Período</span><span class="preview-val">'+mesNombre+' '+c.anio+'</span></div>'+
+    '<div class="preview-row"><span class="preview-label">Categoría</span><span class="preview-val">'+c.categoria+'</span></div>'+
+    '<div class="section-sep">Facturación acumulada</div>';
+  for(var i=0;i<c.rubros.length;i++){
+    var t=0;for(var m=0;m<12;m++)t+=getVal(c,m,i);
+    html+='<div class="preview-row"><span class="preview-label">'+(c.rubros[i].nombre||'Rubro '+(i+1))+'</span><span class="preview-val">$'+fmt(t)+'</span></div>';
+  }
+  html+='<div class="preview-row"><span class="preview-label" style="font-weight:600">Total</span><span class="preview-val" style="font-weight:600">$'+fmt(totalFact)+'</span></div>'+
+    '<div class="section-sep">Gastos y Ganancia</div>';
+  for(var i=0;i<gastos.length;i++)html+='<div class="preview-row"><span class="preview-label">'+gastos[i].label+'</span><span class="preview-val">$'+fmt(gastos[i].val)+'</span></div>';
+  html+='<div class="preview-row"><span class="preview-label" style="font-weight:600;color:#c0392b">Total gastos</span><span class="preview-val" style="color:#c0392b">$'+fmt(totalGastos)+'</span></div>'+
+    '<div class="preview-row"><span class="preview-label" style="font-weight:600;color:#27ae60">Ganancia</span><span class="preview-val" style="color:#27ae60">$'+fmt(ganancia)+'</span></div>'+
+    '<div class="preview-row"><span class="preview-label">% Gastos / Facturación</span><span class="preview-val">'+pct.toFixed(1)+'%</span></div>'+
+    '<div class="section-sep">Vencimiento</div>'+
+    '<div class="preview-row"><span class="preview-label">Fecha</span><span class="preview-val">'+(c.vencFecha||'—')+'</span></div>'+
+    '<div class="preview-row"><span class="preview-label">Importe</span><span class="preview-val">$'+fmt(c.vencImporte)+'</span></div>'+
+    '<div class="section-sep">Cumplimiento</div>'+
+    '<div class="preview-row"><span class="preview-label">ARCA</span><span class="preview-val">'+(c.arcaDeuda?'Deuda: $'+fmt(c.arcaDeudor):'Al día')+'</span></div>'+
+    '<div class="preview-row"><span class="preview-label">ATP</span><span class="preview-val">'+(c.atpAldia?'Al día':'Deuda: $'+fmt(c.atpDeuda))+'</span></div>'+
+    '<div class="section-sep">Recategorización '+c.recatFecha+' '+(parseInt(c.anio)+1)+'</div>'+
+    '<div class="preview-row"><span class="preview-label">Acumulado</span><span class="preview-val">$'+fmt(acumulado)+'</span></div>';
+  document.getElementById('preview-data').innerHTML=html;
+}
+
+function generarPDF(){
+  var c=getClient();if(!c)return;
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({unit:'mm',format:'a4'});
+  var W=210,M=18;
+  var mesNombre=MESES_FULL[parseInt(c.mesInforme||0)];
+  var totalFact=getTotalFact(c);
+  var gastos=getGastosConOblig(c);
+  var totalGastos=0;for(var i=0;i<gastos.length;i++)totalGastos+=gastos[i].val;
+  var ganancia=totalFact-totalGastos;
+  var pct=totalFact>0?(totalGastos/totalFact*100):0;
+  var semAnt=parseFloat(c.semAnterior||0);
+  var acumulado=totalFact+semAnt;
+
+  // Header
+  doc.setFillColor(88,103,126);doc.rect(0,0,W,44,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18);doc.setFont('helvetica','bold');
+  doc.text('INFORME MENSUAL MONOTRIBUTO',W/2,16,{align:'center'});
+  doc.setFontSize(13);doc.setFont('helvetica','normal');
+  doc.text((c.nombre||'—').toUpperCase(),W/2,27,{align:'center'});
+  doc.text((mesNombre+' '+c.anio).toUpperCase(),W/2,35,{align:'center'});
+  doc.setFillColor(88,103,126);doc.rect(0,282,W,15,'F');
+  doc.setFontSize(8);doc.setTextColor(255,255,255);
+  doc.text('MARÍA SOLEDAD MONTOYA · Gestión del Cambio y Mejora de Procesos',W/2,290,{align:'center'});
+
+  var y=52;
+  function sect(title){
+    if(y>255){doc.addPage();y=20;}
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(88,103,126);
+    doc.text(title,M,y);doc.setDrawColor(88,103,126);doc.line(M,y+0.5,W-M,y+0.5);
+    doc.setTextColor(50,50,50);y+=7;
+  }
+  function row2(label,val,colorVal){
+    doc.setFont('helvetica','normal');doc.setFontSize(9);
+    doc.setTextColor(120,120,120);doc.text(label,M,y);
+    if(colorVal)doc.setTextColor(colorVal[0],colorVal[1],colorVal[2]);
+    else doc.setTextColor(40,40,40);
+    doc.text(String(val),W-M,y,{align:'right'});y+=5.5;
+  }
+
+  // Datos
+  sect('DATOS DEL CLIENTE');
+  row2('Nombre',c.nombre||'—');row2('CUIT',c.cuit||'—');
+  row2('Categoría monotributo',c.categoria);
+  if(c.domicilio)row2('Dependencia',c.domicilio);
+  y+=3;
+
+  // Facturación
+  sect('1- INGRESOS ANUALES DECLARADOS');
+  var nR=c.rubros.length;
+  var factColW=Math.floor((W-M*2-40-18)/nR);
+  doc.setFillColor(220,227,235);doc.rect(M,y,W-M*2,5.5,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(40,40,40);
+  doc.text('Mes',M+1,y+3.8);
+  for(var i=0;i<c.rubros.length;i++)doc.text((c.rubros[i].nombre||'Rubro '+(i+1)).substring(0,20),M+40+i*factColW,y+3.8);
+  doc.text('Total',W-M-1,y+3.8,{align:'right'});
+  y+=5.5;
+  var tots=[];for(var i=0;i<nR;i++)tots.push(0);var grand=0;
+  for(var m=0;m<12;m++){
+    var rowT=0;
+    if(m%2===0){doc.setFillColor(249,250,251);doc.rect(M,y,W-M*2,5,'F');}
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(90,90,90);
+    doc.text(MESES[m]+'-'+String(c.anio).slice(-2),M+1,y+3.5);
+    for(var r=0;r<nR;r++){var v=getVal(c,m,r);tots[r]+=v;rowT+=v;if(v>0)doc.text('$'+fmt(v),M+40+r*factColW+factColW-1,y+3.5,{align:'right'});}
+    grand+=rowT;
+    if(rowT>0){doc.setTextColor(40,40,40);doc.text('$'+fmt(rowT),W-M-1,y+3.5,{align:'right'});}
+    y+=5;
+  }
+  doc.setFillColor(195,208,222);doc.rect(M,y,W-M*2,5.5,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(30,30,30);
+  doc.text('TOTAL',M+1,y+3.8);
+  for(var i=0;i<nR;i++){if(tots[i]>0)doc.text('$'+fmt(tots[i]),M+40+i*factColW+factColW-1,y+3.8,{align:'right'});}
+  doc.text('$'+fmt(grand),W-M-1,y+3.8,{align:'right'});
+  y+=9;
+
+  // Vencimiento
+  sect('2- MONTO MENSUAL A PAGAR');
+  doc.setFillColor(240,248,242);doc.roundedRect(M,y,W-M*2,15,2,2,'F');
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(70,70,70);
+  doc.text('Próximo vencimiento: '+(c.vencFecha||'—'),M+4,y+6.5);
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30,30,30);
+  doc.text('Importe a pagar: $'+fmt(c.vencImporte),M+4,y+12);
+  y+=20;
+
+  // Cumplimiento
+  sect('3- ESTADO DE CUMPLIMIENTO');
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(40,40,40);
+  doc.text('a- ARCA',M,y);y+=4;
+  if(c.arcaDeuda){
+    var h=c.arcaNota?22:14;
+    doc.setFillColor(248,249,251);doc.roundedRect(M,y,W-M*2,h,2,2,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(60,60,60);
+    doc.text('Total Saldo Deudor: $'+fmt(c.arcaDeudor),M+4,y+6);
+    doc.text('Obligación Mensual: $'+fmt(c.arcaMensual),M+4,y+12);
+    if(c.arcaNota){doc.setFontSize(7.5);doc.setTextColor(110,110,110);var nl=doc.splitTextToSize('Nota: '+c.arcaNota,W-M*2-8);doc.text(nl,M+4,y+17);}
+    y+=h+4;
+  }else{
+    doc.setFillColor(240,250,243);doc.roundedRect(M,y,W-M*2,9,2,2,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(40,130,70);
+    doc.text('Sin deuda · Al día',M+4,y+6);y+=13;
+  }
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(40,40,40);
+  doc.text('b- ATP',M,y);y+=4;
+  if(!c.atpAldia){
+    doc.setFillColor(255,247,237);doc.roundedRect(M,y,W-M*2,9,2,2,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(180,80,20);
+    doc.text('Deuda pendiente: $'+fmt(c.atpDeuda),M+4,y+6);y+=13;
+  }else{
+    doc.setFillColor(240,250,243);doc.roundedRect(M,y,W-M*2,9,2,2,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(40,130,70);
+    doc.text('Al día',M+4,y+6);y+=13;
+  }
+  y+=2;
+
+  // Tasas
+  var secNum=4;
+  if(c.tieneTasasNac){
+    var tusTotal=0,cntTotal=0;
+    for(var m=0;m<12;m++){tusTotal+=parseFloat((c.meses[m]&&c.meses[m]['tus'])?c.meses[m]['tus']:0);cntTotal+=parseFloat((c.meses[m]&&c.meses[m]['cnt'])?c.meses[m]['cnt']:0);}
+    sect(secNum+'- TASAS NACIONALES (TUSV / CNT)');secNum++;
+    doc.setFillColor(248,249,251);doc.roundedRect(M,y,W-M*2,11,2,2,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(50,50,50);
+    doc.text('Tasa Universal de Servicio: $'+fmt(tusTotal),M+4,y+7);
+    doc.text('Tasa CNT: $'+fmt(cntTotal),M+108,y+7);
+    y+=16;
+  }
+  if(c.tieneTasaMunicipal){
+    var munTotal=0;for(var m=0;m<12;m++)munTotal+=parseFloat((c.meses[m]&&c.meses[m]['mun'])?c.meses[m]['mun']:0);
+    sect(secNum+'- TASA MUNICIPAL DE INDUSTRIA Y COMERCIO');secNum++;
+    doc.setFillColor(248,249,251);doc.roundedRect(M,y,W-M*2,14,2,2,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);
+    if(c.municipio)doc.text('Municipio: '+c.municipio,M+4,y+6);
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);
+    doc.text('Total anual: $'+fmt(munTotal),M+4,y+12);y+=19;
+  }
+  if(c.tieneMipyme){
+    sect(secNum+'- CERTIFICADO MIPYME');secNum++;
+    doc.setFillColor(248,249,251);doc.roundedRect(M,y,W-M*2,14,2,2,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);
+    doc.text('Certificado MiPyme vigente hasta el '+(c.mipymeVence||'—'),M+4,y+6);
+    doc.text('Categoría: '+(c.mipymeCat||'Micro')+'  ·  Sector: Servicios',M+4,y+12);y+=18;
+  }
+
+  // Gastos y Ganancia
+  if(y>220){doc.addPage();y=20;}
+  sect(secNum+'- GASTOS Y GANANCIA');secNum++;
+  var lineH=6;
+  var totalRows=gastos.length+4;
+  var boxH=totalRows*lineH+8;
+  doc.setFillColor(248,249,251);doc.roundedRect(M,y,W-M*2,boxH,2,2,'F');
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(80,80,80);
+  var yy=y+6;
+  doc.text('Total facturación',M+4,yy);doc.text('$'+fmt(totalFact),W-M-4,yy,{align:'right'});yy+=lineH;
+  for(var i=0;i<gastos.length;i++){
+    doc.text(gastos[i].label,M+4,yy);
+    doc.text('- $'+fmt(gastos[i].val),W-M-4,yy,{align:'right'});yy+=lineH;
+  }
+  doc.setDrawColor(180,180,180);doc.line(M+4,yy-2,W-M-4,yy-2);
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(180,40,40);
+  doc.text('Total gastos',M+4,yy);doc.text('$'+fmt(totalGastos),W-M-4,yy,{align:'right'});yy+=lineH;
+  doc.setTextColor(30,140,70);doc.setFontSize(10);
+  doc.text('Ganancia del año',M+4,yy);doc.text('$'+fmt(ganancia),W-M-4,yy,{align:'right'});yy+=lineH;
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(100,100,100);
+  doc.text('% Gastos / Facturación',M+4,yy);doc.text(pct.toFixed(1)+'%',W-M-4,yy,{align:'right'});
+  y+=boxH+6;
+
+  // Recategorización
+  if(y>230){doc.addPage();y=20;}
+  sect(secNum+'- RECATEGORIZACIÓN '+c.recatFecha.toUpperCase()+' '+(parseInt(c.anio)+1));
+  doc.setFillColor(235,242,250);doc.roundedRect(M,y,W-M*2,22,2,2,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(40,70,120);
+  doc.text('Acumulado: $'+fmt(acumulado),W/2,y+10,{align:'center'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(80,100,130);
+  doc.text('Sem. anterior $'+fmt(semAnt)+' + Facturado $'+fmt(totalFact),W/2,y+17,{align:'center'});
+  y+=28;
+  // Tabla categorías
+  doc.setFillColor(220,227,235);doc.rect(M,y,W-M*2,5.5,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(40,40,40);
+  doc.text('Cat.',M+2,y+3.8);doc.text('Límite anual',M+25,y+3.8);doc.text('Diferencia',W-M-2,y+3.8,{align:'right'});
+  y+=5.5;
+  for(var i=0;i<CATEGORIAS_2026.length;i++){
+    var cat=CATEGORIAS_2026[i];var diff=cat.limite-acumulado;
+    var isActual=cat.cat===c.categoria;
+    if(isActual){doc.setFillColor(225,238,255);}
+    else if(diff<0){doc.setFillColor(255,240,240);}
+    else if(i>0&&CATEGORIAS_2026[i-1].cat===c.categoria){doc.setFillColor(255,252,230);}
+    else{if(i%2===0)doc.setFillColor(249,250,251);else doc.setFillColor(255,255,255);}
+    doc.rect(M,y,W-M*2,5,'F');
+    doc.setFont(isActual?'helvetica':'helvetica',isActual?'bold':'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(isActual?20:diff<0?180:60,isActual?60:diff<0?30:60,isActual?140:diff<0?30:60);
+    doc.text(cat.cat+(isActual?' ◀':''),M+2,y+3.5);
+    doc.text('$'+fmt(cat.limite),M+25,y+3.5);
+    doc.setTextColor(diff>=0?40:180,diff>=0?130:40,diff>=0?70:40);
+    doc.text((diff>=0?'+':'')+'$'+fmt(diff),W-M-2,y+3.5,{align:'right'});
+    y+=5;
+  }
+  y+=4;
+
+  doc.save('Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf');
+}
+
+loadData();renderSidebar();
+</script>
+</body>
+</html>
