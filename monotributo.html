@@ -535,6 +535,15 @@ function buildPreview(c){
   var semAnt=parseFloat(c.semAnterior||0);
   var acumulado=totalFact+semAnt;
   var mesNombre=MESES_FULL[parseInt(c.mesInforme||0)];
+  var pvCatActual=null,pvCatSig=null,pvMargen=0;
+  for(var pi=0;pi<CATEGORIAS_2026.length;pi++){
+    if(CATEGORIAS_2026[pi].cat===c.categoria){
+      pvCatActual=CATEGORIAS_2026[pi];
+      if(pi+1<CATEGORIAS_2026.length)pvCatSig=CATEGORIAS_2026[pi+1];
+      break;
+    }
+  }
+  pvMargen=pvCatActual?pvCatActual.limite-acumulado:0;
   var anioSig=c.anio;
 
   var html='<div class="section-sep">Datos del cliente</div>'+
@@ -560,7 +569,14 @@ function buildPreview(c){
     '<div class="preview-row"><span class="preview-label">ARCA</span><span class="preview-val">'+(c.arcaDeuda?'Deuda: $'+fmt(c.arcaDeudor):'Al día')+'</span></div>'+
     '<div class="preview-row"><span class="preview-label">ATP</span><span class="preview-val">'+(c.atpAldia?'Al día':'Deuda: $'+fmt(c.atpDeuda))+'</span></div>'+
     '<div class="section-sep">Recategorización '+c.recatFecha+' '+anioSig+'</div>'+
-    '<div class="preview-row"><span class="preview-label">Acumulado</span><span class="preview-val" style="font-weight:700;color:#1a3a6a">$'+fmt(acumulado)+'</span></div>';
+    '<div class="preview-row"><span class="preview-label">Acumulado</span><span class="preview-val" style="font-weight:700;color:#1a3a6a">$'+fmt(acumulado)+'</span></div>'+
+    (pvCatActual?
+      '<div style="margin-top:10px;border:1px solid #dde;border-radius:8px;overflow:hidden">'+
+        '<div style="background:#deeeff;padding:8px 12px;display:flex;justify-content:space-between"><span style="font-weight:600;color:#1a5c9e">CATEGORÍA '+c.categoria+'</span><span style="font-weight:700;color:#1a5c9e">$'+fmt(pvCatActual.limite)+'</span></div>'+
+        '<div style="background:#fff;padding:8px 12px;display:flex;justify-content:space-between;border-top:1px solid #dde"><span style="color:#555">Podés facturar para mantenerte</span><span style="font-weight:700;color:#27ae60">$'+fmt(pvMargen>0?pvMargen:0)+'</span></div>'+
+        (pvCatSig?'<div style="background:#fff8e6;padding:8px 12px;display:flex;justify-content:space-between;border-top:1px solid #dde"><span style="font-weight:600;color:#8a6200">CATEGORÍA '+pvCatSig.cat+'</span><span style="font-weight:700;color:#8a6200">$'+fmt(pvCatSig.limite)+'</span></div>':'')+
+      '</div>'
+    :'');
   document.getElementById('preview-data').innerHTML=html;
 }
 
@@ -976,6 +992,14 @@ function importarClientes(event){
 }
 
 loadData();
+
+// Event delegation para botones generados dinámicamente
+document.addEventListener('click', function(e){
+  if(e.target && e.target.classList.contains('btn-pdf')){
+    generarPDF();
+  }
+});
+
 // Migrar clientes viejos que no tienen meses inicializados
 for(var i=0;i<appData.clients.length;i++){
   var c=appData.clients[i];
