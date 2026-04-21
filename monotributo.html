@@ -656,10 +656,8 @@ function generarPDF(){
   doc.addPage();
   doc.setFillColor(255,255,255);
   // Marco decorativo
-  doc.setDrawColor(88,103,126);doc.setLineWidth(0.5);
-  doc.rect(15,15,W-30,267);
-  doc.setLineWidth(0.2);
-  doc.rect(17,17,W-34,263);
+  doc.setDrawColor(88,103,126);doc.setLineWidth(0.8);
+  doc.rect(14,14,W-28,269);
   
   // Título
   doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(88,103,126);
@@ -823,7 +821,7 @@ function generarPDF(){
   doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(80,80,80);
   for(var i=0;i<gastos.length;i++){
     doc.text(gastos[i].label,M+4,yy);
-    doc.setTextColor(180,40,40);doc.text('− $'+fmt(gastos[i].val),W-M-4,yy,{align:'right'});
+    doc.setTextColor(180,40,40);doc.text('$'+fmt(gastos[i].val),W-M-4,yy,{align:'right'});doc.text('-',W-M-38,yy);
     doc.setTextColor(80,80,80);yy+=lineH;
   }
   doc.setDrawColor(180,180,180);doc.line(M+4,yy-2,W-M-4,yy-2);
@@ -850,39 +848,48 @@ function generarPDF(){
   }
   pdfMargen=pdfCatActual?pdfCatActual.limite-acumulado:0;
 
-  // Cuadro situación categoría actual
-  if(pdfCatActual){
-    doc.setFillColor(220,230,245);doc.rect(M,y,W-M*2,8,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,78,168);
-    doc.text('CATEGORÍA '+c.categoria,M+4,y+5.5);
-    doc.text('$'+fmt(pdfCatActual.limite),W-M-4,y+5.5,{align:'right'});
-    y+=8;
-    doc.setFillColor(252,252,252);doc.rect(M,y,W-M*2,8,'F');
-    doc.setDrawColor(220,220,220);doc.rect(M,y,W-M*2,8);
-    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);
-    doc.text('Podés facturar para mantenerte en la categoría',M+4,y+5.5);
-    doc.setFont('helvetica','bold');doc.setTextColor(39,174,96);
-    doc.text('$'+fmt(pdfMargen>0?pdfMargen:0),W-M-4,y+5.5,{align:'right'});
-    y+=8;
-    if(pdfCatSig){
-      doc.setFillColor(255,252,230);doc.rect(M,y,W-M*2,8,'F');
-      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(138,98,0);
-      doc.text('CATEGORÍA '+pdfCatSig.cat,M+4,y+5.5);
-      doc.text('$'+fmt(pdfCatSig.limite),W-M-4,y+5.5,{align:'right'});
-      y+=8;
-    }
-    y+=6;
-  }
-
+  // 1. ACUMULADO
   doc.setFillColor(220,232,250);doc.roundedRect(M,y,W-M*2,24,2,2,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(26,58,102);
   doc.text('Acumulado: $'+fmt(acumulado),W/2,y+11,{align:'center'});
   doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(80,110,160);
   doc.text('Sem. anterior $'+fmt(semAnt)+' + Facturado $'+fmt(totalFact),W/2,y+19,{align:'center'});
   y+=30;
+
+  // 2. CUADRO CATEGORIA ACTUAL
+  if(pdfCatActual){
+    doc.setFillColor(210,228,255);doc.rect(M,y,W-M*2,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(20,60,140);
+    doc.text('CATEGORIA '+c.categoria+' - ACTUAL',M+4,y+5.5);
+    doc.text('$'+fmt(pdfCatActual.limite),W-M-4,y+5.5,{align:'right'});
+    y+=8;
+    doc.setFillColor(250,255,250);doc.rect(M,y,W-M*2,8,'F');
+    doc.setDrawColor(200,230,200);doc.rect(M,y,W-M*2,8);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,40,40);
+    doc.text('Podes facturar para mantenerte en la categoria',M+4,y+5.5);
+    doc.setFont('helvetica','bold');doc.setTextColor(30,150,70);
+    doc.text('$'+fmt(pdfMargen>0?pdfMargen:0),W-M-4,y+5.5,{align:'right'});
+    y+=8;
+    if(pdfCatSig){
+      doc.setFillColor(255,248,220);doc.rect(M,y,W-M*2,8,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(140,100,0);
+      doc.text('CATEGORIA '+pdfCatSig.cat+' - SIGUIENTE',M+4,y+5.5);
+      doc.text('$'+fmt(pdfCatSig.limite),W-M-4,y+5.5,{align:'right'});
+      y+=8;
+    }
+    y+=8;
+  }
+
+  // 3. TITULO TABLA
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(88,103,126);
+  doc.text('CATEGORIAS VIGENTES 2026',M,y);
+  doc.setDrawColor(88,103,126);doc.setLineWidth(0.3);doc.line(M,y+1.5,W-M,y+1.5);
+  y+=8;
+
+  // 4. TABLA
   doc.setFillColor(220,227,235);doc.rect(M,y,W-M*2,5.5,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(40,40,40);
-  doc.text('Categoría',M+2,y+3.8);doc.text('Límite anual',M+30,y+3.8);doc.text('Diferencia',W-M-2,y+3.8,{align:'right'});y+=5.5;
+  doc.text('Cat.',M+2,y+3.8);doc.text('Limite anual',M+20,y+3.8);doc.text('Diferencia con acumulado',W-M-2,y+3.8,{align:'right'});y+=5.5;
   for(var i=0;i<CATEGORIAS_2026.length;i++){
     var cat=CATEGORIAS_2026[i],diff=cat.limite-acumulado;
     var isActual=cat.cat===c.categoria;
@@ -894,7 +901,7 @@ function generarPDF(){
     doc.rect(M,y,W-M*2,5,'F');
     doc.setFont('helvetica',isActual?'bold':'normal');doc.setFontSize(7.5);
     doc.setTextColor(isActual?20:diff<0?180:60,isActual?60:diff<0?30:60,isActual?140:diff<0?30:60);
-    doc.text(cat.cat+(isActual?' ◀':'')+(isSig?' ↑':''),M+2,y+3.5);
+    doc.text(cat.cat+(isActual?' actual':'')+(isSig?' >':''),M+2,y+3.5);
     doc.text('$'+fmt(cat.limite),M+30,y+3.5);
     doc.setTextColor(diff>=0?40:180,diff>=0?130:40,diff>=0?70:40);
     doc.text((diff>=0?'+ ':'')+'$'+fmt(diff),W-M-2,y+3.5,{align:'right'});y+=5;
