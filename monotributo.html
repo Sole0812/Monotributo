@@ -655,28 +655,38 @@ function generarPDF(){
   // Página 2: Objetivo del informe
   doc.addPage();
   doc.setFillColor(255,255,255);
-  // Marco decorativo
+  
+  // Marco exterior
   doc.setDrawColor(88,103,126);doc.setLineWidth(0.8);
-  doc.rect(14,14,W-28,269);
+  doc.rect(12,12,W-24,273);
+  // Marco interior
+  doc.setLineWidth(0.3);
+  doc.rect(15,15,W-30,267);
   
-  // Título
+  // Título centrado
   doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(88,103,126);
-  doc.text('OBJETIVO DEL INFORME',W/2,50,{align:'center'});
+  doc.text('OBJETIVO DEL INFORME',W/2,38,{align:'center'});
+  // Línea bajo título
   doc.setLineWidth(0.5);doc.setDrawColor(88,103,126);
-  doc.line(W/2-45,53,W/2+45,53);
+  doc.line(W/2-50,42,W/2+50,42);
   
-  // Texto objetivo
+  // Textos bien encuadrados
+  var margenIzq=25;
+  var anchoTexto=W-50;
   doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);
-  var texto1='El propósito de este informe es ofrecerte una visión clara y detallada de la situación actual de tu monotributo, con la información más reciente hasta el día anterior a la fecha de emisión. Aunque el documento lleva el nombre del mes pasado, incluye los últimos avances y asesoramiento para ayudarte a prevenir exclusiones o bloqueos de cuentas.';
-  var texto2='Este informe se centra exclusivamente en el régimen de monotributo y no abarca otros impuestos ni los costos relacionados con la operación de tu negocio. Además, el contenido puede variar de un mes a otro, ya que se incorporarán nuevos datos o información relevante según tu caso particular.';
-  var texto3='El informe está dividido en secciones, que abarcan tanto información general como detalles específicos de tu caso. La información utilizada para elaborar el reporte proviene de los datos que me has suministrado y de los registros de la AFIP. Si notas que falta algún dato o consideras que hay información adicional que deberíamos incluir, no dudes en comunicármelo para analizar su incorporación.';
-  var texto4='En este caso, como ya has recibido un informe anterior más completo, solamente te expongo los datos que han cambiado respecto al mes pasado. Cuando haya información relevante que modifique algunos aspectos del primer informe, te la haré saber.';
   
-  var yObj=70;
-  [texto1,texto2,texto3,texto4].forEach(function(t){
-    var lines=doc.splitTextToSize(t,W-50);
-    doc.text(lines,25,yObj,{align:'justify'});
-    yObj+=lines.length*5.5+8;
+  var textos=[
+    'El proposito de este informe es ofrecerte una vision clara y detallada de la situacion actual de tu monotributo, con la informacion mas reciente hasta el dia anterior a la fecha de emision. Aunque el documento lleva el nombre del mes pasado, incluye los ultimos avances y asesoramiento para ayudarte a prevenir exclusiones o bloqueos de cuentas.',
+    'Este informe se centra exclusivamente en el regimen de monotributo y no abarca otros impuestos ni los costos relacionados con la operacion de tu negocio. Ademas, el contenido puede variar de un mes a otro, ya que se incorporaran nuevos datos o informacion relevante segun tu caso particular.',
+    'El informe esta dividido en secciones, que abarcan tanto informacion general como detalles especificos de tu caso. La informacion utilizada para elaborar el reporte proviene de los datos que me has suministrado y de los registros de la AFIP. Si notas que falta algun dato o consideras que hay informacion adicional que deberiamos incluir, no dudes en comunicarmelo para analizar su incorporacion.',
+    'En este caso, como ya has recibido un informe anterior mas completo, solamente te expongo los datos que han cambiado respecto al mes pasado. Cuando haya informacion relevante que modifique algunos aspectos del primer informe, te la hare saber.'
+  ];
+  
+  var yObj=55;
+  textos.forEach(function(t){
+    var lines=doc.splitTextToSize(t,anchoTexto);
+    doc.text(lines,margenIzq,yObj);
+    yObj+=lines.length*6+10;
   });
 
   // Nueva página para el contenido
