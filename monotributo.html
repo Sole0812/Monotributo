@@ -676,10 +676,10 @@ function generarPDF(){
   doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);
   
   var textos=[
-    'El proposito de este informe es ofrecerte una vision clara y detallada de la situacion actual de tu monotributo, con la informacion mas reciente hasta el dia anterior a la fecha de emision. Aunque el documento lleva el nombre del mes pasado, incluye los ultimos avances y asesoramiento para ayudarte a prevenir exclusiones o bloqueos de cuentas.',
-    'Este informe se centra exclusivamente en el regimen de monotributo y no abarca otros impuestos ni los costos relacionados con la operacion de tu negocio. Ademas, el contenido puede variar de un mes a otro, ya que se incorporaran nuevos datos o informacion relevante segun tu caso particular.',
-    'El informe esta dividido en secciones, que abarcan tanto informacion general como detalles especificos de tu caso. La informacion utilizada para elaborar el reporte proviene de los datos que me has suministrado y de los registros de la AFIP. Si notas que falta algun dato o consideras que hay informacion adicional que deberiamos incluir, no dudes en comunicarmelo para analizar su incorporacion.',
-    'En este caso, como ya has recibido un informe anterior mas completo, solamente te expongo los datos que han cambiado respecto al mes pasado. Cuando haya informacion relevante que modifique algunos aspectos del primer informe, te la hare saber.'
+    'El propósito de este informe es ofrecerte una visión clara y detallada de la situación actual de tu monotributo, con la información más reciente hasta el día anterior a la fecha de emisión. Aunque el documento lleva el nombre del mes pasado, incluye los últimos avances y asesoramiento para ayudarte a prevenir exclusiones o bloqueos de cuentas.',
+    'Este informe se centra exclusivamente en el régimen de monotributo y no abarca otros impuestos ni los costos relacionados con la operación de tu negocio. Además, el contenido puede variar de un mes a otro, ya que se incorporarán nuevos datos o información relevante según tu caso particular.',
+    'El informe está dividido en secciones, que abarcan tanto información general como detalles específicos de tu caso. La información utilizada para elaborar el reporte proviene de los datos que me has suministrado y de los registros de la AFIP. Si notas que falta algún dato o consideras que hay información adicional que deberíamos incluir, no dudes en comunicármelo para analizar su incorporación.',
+    'En este caso, como ya has recibido un informe anterior más completo, solamente te expongo los datos que han cambiado respecto al mes pasado. Cuando haya información relevante que modifique algunos aspectos del primer informe, te la haré saber.'
   ];
   
   var yObj=55;
@@ -834,7 +834,7 @@ function generarPDF(){
     doc.setTextColor(180,40,40);doc.text('$'+fmt(gastos[i].val),W-M-4,yy,{align:'right'});doc.text('-',W-M-38,yy);
     doc.setTextColor(80,80,80);yy+=lineH;
   }
-  doc.setDrawColor(180,180,180);doc.line(M+4,yy-2,W-M-4,yy-2);
+  doc.setDrawColor(180,180,180);doc.line(M+4,yy+1,W-M-4,yy+1);
   doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(192,57,43);
   doc.text('Total gastos',M+4,yy);doc.text('$'+fmt(totalGastos),W-M-4,yy,{align:'right'});yy+=lineH+1;
   doc.setTextColor(39,174,96);doc.setFontSize(11);
