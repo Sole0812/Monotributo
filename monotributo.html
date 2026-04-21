@@ -95,6 +95,17 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#58677e}
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.pdf-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:300;align-items:center;justify-content:center}
+.pdf-modal.open{display:flex}
+.pdf-container{background:#fff;width:90%;height:90%;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.pdf-toolbar{background:#58677e;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-shrink:0}
+.pdf-toolbar span{font-size:14px;font-weight:600}
+.pdf-toolbar-btns{display:flex;gap:8px}
+.pdf-btn{background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:500}
+.pdf-btn:hover{background:rgba(255,255,255,.35)}
+.pdf-btn.primary{background:#fff;color:#58677e}
+.pdf-btn.primary:hover{background:#eef2f7}
+.pdf-frame{flex:1;border:none;width:100%}
 /* Settings panel */
 .settings-btn{position:fixed;bottom:1.5rem;left:1rem;background:#58677e;color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .settings-btn:hover{background:#46556a}
@@ -430,7 +441,7 @@ function renderMain(){
     '<div class="tab-content" id="tab-preview">'+
       '<div class="alert-info">Revisá todos los datos antes de generar el PDF.</div>'+
       '<div class="card" id="preview-data"></div>'+
-      '<button class="btn-pdf" onclick="generarPDF()">Ver / Descargar PDF del informe</button>'+
+      '<button class="btn-pdf" onclick="generarPDF()">Ver PDF del informe</button>'+
     '</div>';
 
   calcTotales();
@@ -892,9 +903,10 @@ function generarPDF(){console.log('Iniciando PDF...');
   if(cfg2.ig)doc.text('Instagram: @'+cfg2.ig.replace('@',''),W/2,yc,{align:'center'});yc+=lh;
   if(cfg2.li)doc.text('LinkedIn: '+cfg2.li,W/2,yc,{align:'center'});
   
-  // Abrir PDF en nueva pestaña
+  // Mostrar PDF en modal
   var pdfName = 'Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf';
-  doc.output('dataurlnewwindow', {filename: pdfName});
+  var dataUri = doc.output('datauristring');
+  mostrarPDFModal(dataUri, pdfName);
 }
 
 
@@ -916,6 +928,25 @@ function loadCfg(){
 }
 function saveCfgData(cfg){try{localStorage.setItem('mono_cfg',JSON.stringify(cfg));}catch(e){}}
 function getCfg(){return loadCfg();}
+
+function mostrarPDFModal(dataUri, nombre){
+  document.getElementById('pdf-title').textContent = nombre || 'Informe PDF';
+  document.getElementById('pdf-frame').src = dataUri;
+  document.getElementById('pdf-modal').classList.add('open');
+}
+function cerrarPDF(){
+  document.getElementById('pdf-modal').classList.remove('open');
+  document.getElementById('pdf-frame').src = '';
+}
+function imprimirPDF(){
+  var frame = document.getElementById('pdf-frame');
+  try{
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+  }catch(e){
+    window.print();
+  }
+}
 
 function openSettings(){
   var cfg=loadCfg();
@@ -1018,6 +1049,20 @@ for(var i=0;i<appData.clients.length;i++){
 saveData();
 renderSidebar();
 </script>
+
+<!-- Modal PDF -->
+<div class="pdf-modal" id="pdf-modal">
+  <div class="pdf-container">
+    <div class="pdf-toolbar">
+      <span id="pdf-title">Informe PDF</span>
+      <div class="pdf-toolbar-btns">
+        <button class="pdf-btn primary" onclick="imprimirPDF()">🖨️ Imprimir / Guardar</button>
+        <button class="pdf-btn" onclick="cerrarPDF()">✕ Cerrar</button>
+      </div>
+    </div>
+    <iframe class="pdf-frame" id="pdf-frame"></iframe>
+  </div>
+</div>
 
 <!-- Botón configuración -->
 <button class="settings-btn" onclick="openSettings()" title="Configuración">⚙</button>
