@@ -854,7 +854,7 @@ function generarPDF(){
   for(var i=0;i<CATEGORIAS_2026.length;i++){
     var cat=CATEGORIAS_2026[i],diff=cat.limite-acumulado;
     var isActual=cat.cat===c.categoria;
-    var isSig=idxActual>=0&&i===idxActual+1;
+    var isSig=pdfIdxActual>=0&&i===pdfIdxActual+1;
     if(isActual){doc.setFillColor(210,230,255);}
     else if(isSig){doc.setFillColor(255,250,220);}
     else if(diff<0){doc.setFillColor(255,235,235);}
