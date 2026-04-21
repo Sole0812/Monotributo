@@ -775,6 +775,42 @@ function generarPDF(){
   // Recategorización
   if(y>225){doc.addPage();y=20;}
   sect(secNum+'- RECATEGORIZACIÓN '+c.recatFecha.toUpperCase()+' '+anioSig);
+  
+  // Variables de categoría para PDF
+  var pdfCatActual=null,pdfIdxActual=-1,pdfCatSig=null,pdfMargen=0;
+  for(var pi=0;pi<CATEGORIAS_2026.length;pi++){
+    if(CATEGORIAS_2026[pi].cat===c.categoria){
+      pdfCatActual=CATEGORIAS_2026[pi];pdfIdxActual=pi;
+      if(pi+1<CATEGORIAS_2026.length)pdfCatSig=CATEGORIAS_2026[pi+1];
+      break;
+    }
+  }
+  pdfMargen=pdfCatActual?pdfCatActual.limite-acumulado:0;
+
+  // Cuadro situación categoría actual
+  if(pdfCatActual){
+    doc.setFillColor(220,230,245);doc.rect(M,y,W-M*2,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(26,78,168);
+    doc.text('CATEGORÍA '+c.categoria,M+4,y+5.5);
+    doc.text('$'+fmt(pdfCatActual.limite),W-M-4,y+5.5,{align:'right'});
+    y+=8;
+    doc.setFillColor(252,252,252);doc.rect(M,y,W-M*2,8,'F');
+    doc.setDrawColor(220,220,220);doc.rect(M,y,W-M*2,8);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);
+    doc.text('Podés facturar para mantenerte en la categoría',M+4,y+5.5);
+    doc.setFont('helvetica','bold');doc.setTextColor(39,174,96);
+    doc.text('$'+fmt(pdfMargen>0?pdfMargen:0),W-M-4,y+5.5,{align:'right'});
+    y+=8;
+    if(pdfCatSig){
+      doc.setFillColor(255,252,230);doc.rect(M,y,W-M*2,8,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(138,98,0);
+      doc.text('CATEGORÍA '+pdfCatSig.cat,M+4,y+5.5);
+      doc.text('$'+fmt(pdfCatSig.limite),W-M-4,y+5.5,{align:'right'});
+      y+=8;
+    }
+    y+=6;
+  }
+
   doc.setFillColor(220,232,250);doc.roundedRect(M,y,W-M*2,24,2,2,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(26,58,102);
   doc.text('Acumulado: $'+fmt(acumulado),W/2,y+11,{align:'center'});
@@ -840,7 +876,12 @@ function generarPDF(){
   if(cfg2.ig)doc.text('Instagram: @'+cfg2.ig.replace('@',''),W/2,yc,{align:'center'});yc+=lh;
   if(cfg2.li)doc.text('LinkedIn: '+cfg2.li,W/2,yc,{align:'center'});
   
-  doc.save('Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf');
+  try {
+    doc.save('Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf');
+  } catch(err) {
+    alert('Error al generar PDF: '+err.message+'. Intentá con menos datos o contactá a Soledad.');
+    console.error('PDF error:', err);
+  }
 }
 
 
