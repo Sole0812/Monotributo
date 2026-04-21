@@ -347,7 +347,7 @@ function renderMain(){
     var arcaHtml=c.arcaDeuda?'<div class="row g2"><div><label>Saldo deudor ($)</label><input type="number" value="'+(c.arcaDeudor||'')+'" oninput="up(\'arcaDeudor\',this.value)"></div><div><label>Obligación mensual ($)</label><input type="number" value="'+(c.arcaMensual||'')+'" oninput="up(\'arcaMensual\',this.value)"></div></div><div><label>Nota</label><textarea oninput="up(\'arcaNota\',this.value)">'+(c.arcaNota||'')+'</textarea></div>':'<p style="font-size:13px;color:#aaa;padding:4px 0">Sin deuda · Al día</p>';
   var atpHtml=!c.atpAldia?'<div><label>Deuda pendiente ($)</label><input type="number" value="'+(c.atpDeuda||'')+'" oninput="up(\'atpDeuda\',this.value)"></div>':'<p style="font-size:13px;color:#aaa;padding:4px 0">Al día</p>';
   var mipymeHtml=c.tieneMipyme?'<div class="card"><div class="card-title">Certificado MiPyme</div><div class="row g2"><div><label>Válido hasta</label><input type="date" value="'+(c.mipymeVence||'')+'" onchange="up(\'mipymeVence\',this.value)"></div><div><label>Categoría</label><select onchange="up(\'mipymeCat\',this.value)"><option'+((c.mipymeCat||'Micro')==='Micro'?' selected':'')+'>Micro</option><option'+(c.mipymeCat==='Pequeña'?' selected':'')+'>Pequeña</option><option'+(c.mipymeCat==='Mediana'?' selected':'')+'>Mediana</option></select></div></div></div>':'';
-  var munHtml=c.tieneTasaMunicipal?'<div class="card"><div class="card-title">Tasa Municipal</div><div><label>Municipio / Localidad</label><input type="text" value="'+(c.municipio||'')+'" placeholder="Ej: Resistencia" oninput="up(\'municipio\',this.value)"></div></div>':'';
+  var munHtml=c.tieneTasaMunicipal?'<div class="card"><div class="card-title">Tasa Municipal de Industria y Comercio</div><p style="font-size:12px;color:#aaa;margin-bottom:10px">Se carga bimestralmente en la tabla de Facturación (feb, abr, jun, ago, oct, dic)</p><div class="row g2"><div><label>Municipio / Localidad</label><input type="text" value="'+(c.municipio||'')+'" placeholder="Ej: Resistencia" oninput="up(\'municipio\',this.value)"></div><div><label>Período actual (ej: Cuota 6 2025)</label><input type="text" value="'+(c.munPeriodo||'')+'" placeholder="Ej: Cuota 6 2025" oninput="up(\'munPeriodo\',this.value)"></div></div></div>':'';
 
   document.getElementById('main-area').innerHTML=
     '<div class="page-title">'+(c.nombre||'Nuevo cliente')+'</div>'+
@@ -652,6 +652,35 @@ function generarPDF(){
   doc.setFontSize(10);doc.setFont('helvetica','normal');
   doc.text(cfg.titulo,W/2,282,{align:'center'});
 
+  // Página 2: Objetivo del informe
+  doc.addPage();
+  doc.setFillColor(255,255,255);
+  // Marco decorativo
+  doc.setDrawColor(88,103,126);doc.setLineWidth(0.5);
+  doc.rect(15,15,W-30,267);
+  doc.setLineWidth(0.2);
+  doc.rect(17,17,W-34,263);
+  
+  // Título
+  doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(88,103,126);
+  doc.text('OBJETIVO DEL INFORME',W/2,50,{align:'center'});
+  doc.setLineWidth(0.5);doc.setDrawColor(88,103,126);
+  doc.line(W/2-45,53,W/2+45,53);
+  
+  // Texto objetivo
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);
+  var texto1='El propósito de este informe es ofrecerte una visión clara y detallada de la situación actual de tu monotributo, con la información más reciente hasta el día anterior a la fecha de emisión. Aunque el documento lleva el nombre del mes pasado, incluye los últimos avances y asesoramiento para ayudarte a prevenir exclusiones o bloqueos de cuentas.';
+  var texto2='Este informe se centra exclusivamente en el régimen de monotributo y no abarca otros impuestos ni los costos relacionados con la operación de tu negocio. Además, el contenido puede variar de un mes a otro, ya que se incorporarán nuevos datos o información relevante según tu caso particular.';
+  var texto3='El informe está dividido en secciones, que abarcan tanto información general como detalles específicos de tu caso. La información utilizada para elaborar el reporte proviene de los datos que me has suministrado y de los registros de la AFIP. Si notas que falta algún dato o consideras que hay información adicional que deberíamos incluir, no dudes en comunicármelo para analizar su incorporación.';
+  var texto4='En este caso, como ya has recibido un informe anterior más completo, solamente te expongo los datos que han cambiado respecto al mes pasado. Cuando haya información relevante que modifique algunos aspectos del primer informe, te la haré saber.';
+  
+  var yObj=70;
+  [texto1,texto2,texto3,texto4].forEach(function(t){
+    var lines=doc.splitTextToSize(t,W-50);
+    doc.text(lines,25,yObj,{align:'justify'});
+    yObj+=lines.length*5.5+8;
+  });
+
   // Nueva página para el contenido
   doc.addPage();
   
@@ -696,7 +725,8 @@ function generarPDF(){
   doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(40,40,40);
   doc.text('Mes',M+1,y+3.8);
   for(var i=0;i<nR;i++)doc.text((c.rubros[i].nombre||'Rubro '+(i+1)).substring(0,22),M+40+i*colW,y+3.8);
-  doc.text('Total',W-M-1,y+3.8,{align:'right'});y+=5.5;
+  if(nR>1)doc.text('Total',W-M-1,y+3.8,{align:'right'});
+  y+=5.5;
   var tots=[];for(var i=0;i<nR;i++)tots.push(0);var grand=0;
   for(var m=0;m<12;m++){
     var rowT=0;
@@ -705,14 +735,15 @@ function generarPDF(){
     doc.text(MESES[m]+'-'+String(c.anio).slice(-2),M+1,y+3.5);
     for(var r=0;r<nR;r++){var v=getV(c,m,'r'+r);tots[r]+=v;rowT+=v;if(v>0)doc.text('$'+fmt(v),M+40+r*colW+colW-1,y+3.5,{align:'right'});}
     grand+=rowT;
-    if(rowT>0){doc.setTextColor(40,40,40);doc.text('$'+fmt(rowT),W-M-1,y+3.5,{align:'right'});}
+    if(rowT>0&&nR>1){doc.setTextColor(40,40,40);doc.text('$'+fmt(rowT),W-M-1,y+3.5,{align:'right'});}
     y+=5;
   }
   doc.setFillColor(195,208,222);doc.rect(M,y,W-M*2,5.5,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(30,30,30);
   doc.text('TOTAL',M+1,y+3.8);
   for(var i=0;i<nR;i++){if(tots[i]>0)doc.text('$'+fmt(tots[i]),M+40+i*colW+colW-1,y+3.8,{align:'right'});}
-  doc.text('$'+fmt(grand),W-M-1,y+3.8,{align:'right'});y+=9;
+  if(nR>1)doc.text('$'+fmt(grand),W-M-1,y+3.8,{align:'right'});
+  y+=9;
 
   // Vencimiento
   sect('2- MONTO MENSUAL A PAGAR');
@@ -765,11 +796,12 @@ function generarPDF(){
   if(c.tieneTasaMunicipal){
     var munT=0;for(var m=0;m<12;m++)munT+=getV(c,m,'mun');
     sect(secNum+'- TASA MUNICIPAL DE INDUSTRIA Y COMERCIO');secNum++;
-    doc.setFillColor(248,249,251);doc.roundedRect(M,y,W-M*2,14,2,2,'F');
+    var munH=c.munPeriodo?18:12;
+    doc.setFillColor(248,249,251);doc.roundedRect(M,y,W-M*2,munH,2,2,'F');
     doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);
-    if(c.municipio)doc.text('Municipio: '+c.municipio,M+4,y+6);
+    if(c.municipio)doc.text('Municipio: '+c.municipio+(c.munPeriodo?' · Período: '+c.munPeriodo:''),M+4,y+6);
     doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);
-    doc.text('Total anual: $'+fmt(munT),M+4,y+12);y+=19;
+    doc.text('Total acumulado: $'+fmt(munT),M+4,y+(c.munPeriodo?13:9));y+=munH+4;
   }
   if(c.tieneMipyme){
     sect(secNum+'- CERTIFICADO MIPYME');secNum++;
@@ -905,7 +937,6 @@ function generarPDF(){
   doc.text('Tel: '+cfg2.tel,W/2,yc,{align:'center'});yc+=lh;
   doc.text('Mail: '+cfg2.mail,W/2,yc,{align:'center'});yc+=lh;
   if(cfg2.ig)doc.text('Instagram: @'+cfg2.ig.replace('@',''),W/2,yc,{align:'center'});yc+=lh;
-  if(cfg2.li)doc.text('LinkedIn: '+cfg2.li,W/2,yc,{align:'center'});
   
   // Mostrar PDF en modal
   var pdfName = 'Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf';
@@ -922,8 +953,8 @@ var defaultCfg = {
   cuit: '27-27657234-8',
   tel: '362-4282433',
   mail: 'masoledadmontoya@gmail.com',
-  ig: 'soledadmontoya.ok',
-  li: 'Soledad Montoya'
+  ig: 'soysoledadmontoya',
+  li: ''
 };
 
 function loadCfg(){
@@ -1083,7 +1114,7 @@ renderSidebar();
     </div>
     <div style="margin-bottom:14px"><label>Email</label><input type="text" id="cfg-mail" placeholder="masoledadmontoya@gmail.com"></div>
     <div style="margin-bottom:14px"><label>Instagram</label><input type="text" id="cfg-ig" placeholder="@soledadmontoya.ok"></div>
-    <div style="margin-bottom:14px"><label>LinkedIn</label><input type="text" id="cfg-li" placeholder="Soledad Montoya"></div>
+
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeSettings()">Cancelar</button>
       <button class="btn-save" onclick="saveSettings()">Guardar cambios</button>
