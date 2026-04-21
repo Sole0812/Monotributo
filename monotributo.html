@@ -535,7 +535,7 @@ function buildPreview(c){
   var semAnt=parseFloat(c.semAnterior||0);
   var acumulado=totalFact+semAnt;
   var mesNombre=MESES_FULL[parseInt(c.mesInforme||0)];
-  var anioSig=parseInt(c.anio)+1;
+  var anioSig=c.anio;
 
   var html='<div class="section-sep">Datos del cliente</div>'+
     '<div class="preview-row"><span class="preview-label">Nombre</span><span class="preview-val">'+(c.nombre||'—')+'</span></div>'+
@@ -564,7 +564,7 @@ function buildPreview(c){
   document.getElementById('preview-data').innerHTML=html;
 }
 
-function generarPDF(){
+function generarPDF(){console.log('Iniciando PDF...');
   var c=getClient();if(!c)return;
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({unit:'mm',format:'a4'});
@@ -577,7 +577,7 @@ function generarPDF(){
   var pct=totalFact>0?(totalGastos/totalFact*100):0;
   var semAnt=parseFloat(c.semAnterior||0);
   var acumulado=totalFact+semAnt;
-  var anioSig=parseInt(c.anio)+1;
+  var anioSig=c.anio;
 
   // Obtener configuración
   var cfg=getCfg();
@@ -876,6 +876,7 @@ function generarPDF(){
   if(cfg2.ig)doc.text('Instagram: @'+cfg2.ig.replace('@',''),W/2,yc,{align:'center'});yc+=lh;
   if(cfg2.li)doc.text('LinkedIn: '+cfg2.li,W/2,yc,{align:'center'});
   
+  console.log('Llegando a doc.save...');
   try {
     doc.save('Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf');
   } catch(err) {
