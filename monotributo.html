@@ -892,33 +892,27 @@ function generarPDF(){console.log('Iniciando PDF...');
   if(cfg2.ig)doc.text('Instagram: @'+cfg2.ig.replace('@',''),W/2,yc,{align:'center'});yc+=lh;
   if(cfg2.li)doc.text('LinkedIn: '+cfg2.li,W/2,yc,{align:'center'});
   
-  // Descargar PDF
-  try {
-    var pdfName = 'Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf';
-    // Método 1: doc.save directo
-    doc.save(pdfName);
-  } catch(err) {
-    try {
-      // Método 2: blob URL
-      var pdfBlob = doc.output('blob');
-      var blobUrl = URL.createObjectURL(pdfBlob);
-      var a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = 'Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function(){ URL.revokeObjectURL(blobUrl); }, 1000);
-    } catch(err2) {
-      // Método 3: abrir en nueva pestaña
-      try {
-        var pdfDataUri = doc.output('datauristring');
-        window.open(pdfDataUri, '_blank');
-      } catch(err3) {
-        alert('No se pudo descargar el PDF. Error: '+err3.message);
-      }
-    }
-  }
+  // Descargar PDF - usando iframe oculto para forzar descarga
+  var pdfName = 'Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf';
+  var pdfOutput = doc.output('arraybuffer');
+  var blob = new Blob([pdfOutput], {type:'application/pdf'});
+  var url = URL.createObjectURL(blob);
+  var iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = url;
+  document.body.appendChild(iframe);
+  // Intentar descarga via link
+  setTimeout(function(){
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = pdfName;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    document.body.removeChild(iframe);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+  }, 100);
 }
 
 
