@@ -430,7 +430,7 @@ function renderMain(){
     '<div class="tab-content" id="tab-preview">'+
       '<div class="alert-info">Revisá todos los datos antes de generar el PDF.</div>'+
       '<div class="card" id="preview-data"></div>'+
-      '<button class="btn-pdf" onclick="generarPDF()">Descargar PDF del informe</button>'+
+      '<button class="btn-pdf" onclick="generarPDF()">Ver / Descargar PDF del informe</button>'+
     '</div>';
 
   calcTotales();
@@ -892,27 +892,9 @@ function generarPDF(){console.log('Iniciando PDF...');
   if(cfg2.ig)doc.text('Instagram: @'+cfg2.ig.replace('@',''),W/2,yc,{align:'center'});yc+=lh;
   if(cfg2.li)doc.text('LinkedIn: '+cfg2.li,W/2,yc,{align:'center'});
   
-  // Descargar PDF - usando iframe oculto para forzar descarga
+  // Abrir PDF en nueva pestaña
   var pdfName = 'Informe_'+(c.nombre||'cliente').replace(/ /g,'_')+'_'+mesNombre+'_'+c.anio+'.pdf';
-  var pdfOutput = doc.output('arraybuffer');
-  var blob = new Blob([pdfOutput], {type:'application/pdf'});
-  var url = URL.createObjectURL(blob);
-  var iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = url;
-  document.body.appendChild(iframe);
-  // Intentar descarga via link
-  setTimeout(function(){
-    var link = document.createElement('a');
-    link.href = url;
-    link.download = pdfName;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    document.body.removeChild(iframe);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
-  }, 100);
+  doc.output('dataurlnewwindow', {filename: pdfName});
 }
 
 
