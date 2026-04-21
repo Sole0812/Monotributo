@@ -134,7 +134,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div id="client-list"></div>
     <button class="btn-new" onclick="newClient()">+ Nuevo cliente</button>
     <div style="margin-top:12px;border-top:1px solid #d0d0cc;padding-top:12px;display:flex;gap:6px">
-      <button onclick="exportarClientes()" style="flex:1;background:#58677e;color:#fff;border:none;border-radius:7px;padding:7px 6px;font-size:11px;cursor:pointer;font-weight:600" title="Exportar todos los clientes a un archivo de respaldo">⬇ Exportar</button>
+      <button onclick="generarPDF()" style="width:100%;background:#58677e;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;cursor:pointer;font-weight:600;margin-bottom:8px">📄 Ver PDF</button>
+    <button onclick="exportarClientes()"  style="flex:1;background:#58677e;color:#fff;border:none;border-radius:7px;padding:7px 6px;font-size:11px;cursor:pointer;font-weight:600" title="Exportar todos los clientes a un archivo de respaldo">⬇ Exportar</button>
       <label style="flex:1;background:#fff;color:#58677e;border:1px solid #58677e;border-radius:7px;padding:7px 6px;font-size:11px;cursor:pointer;font-weight:600;text-align:center" title="Importar clientes desde un archivo de respaldo">⬆ Importar<input type="file" accept=".json" onchange="importarClientes(event)" style="display:none"></label>
     </div>
   </div>
@@ -591,7 +592,10 @@ function buildPreview(c){
   document.getElementById('preview-data').innerHTML=html;
 }
 
-function generarPDF(){console.log('Iniciando PDF...');
+function generarPDF(){
+  var c=getClient();
+  if(!c){alert('Seleccioná un cliente primero.');return;}
+  console.log('Iniciando PDF para: '+c.nombre);
   var c=getClient();if(!c)return;
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({unit:'mm',format:'a4'});
