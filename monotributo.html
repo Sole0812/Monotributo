@@ -191,6 +191,7 @@ function makeClient(){
     tieneInternet:false,internet:'',
     tieneRentas:false,rentas:'',labelRentas:'Rentas / DGR',
     tieneOtrosGastos:false,otrosGastos:'',labelOtros:'Otros gastos',
+    tieneRetenciones:false,pctRetenciones:3,
     recatFecha:'julio',semAnterior:'',
     anio:String(new Date().getFullYear()),
     mesInforme:String(new Date().getMonth())
@@ -268,8 +269,9 @@ function getGastosCompletos(c){
   if(c.tieneAlquiler){var alqT=0;for(var m=0;m<12;m++)alqT+=getV(c,m,'alq');if(alqT>0)gastos.push({label:'Alquiler',val:alqT});}
   if(c.tieneLuz){var luzT=0;for(var m=0;m<12;m++)luzT+=getV(c,m,'luz');if(luzT>0)gastos.push({label:'Luz',val:luzT});}
   if(c.tieneInternet){var intT=0;for(var m=0;m<12;m++)intT+=getV(c,m,'int');if(intT>0)gastos.push({label:'Internet / Celular',val:intT});}
-  if(c.tieneRentas&&c.rentas)gastos.push({label:c.labelRentas||'Rentas / DGR',val:parseFloat(c.rentas)});
+  if(c.tieneRentas){var renT=0;for(var m=0;m<12;m++)renT+=getV(c,m,'ren');if(renT>0)gastos.push({label:c.labelRentas||'Rentas / DGR',val:renT});}
   if(c.tieneOtrosGastos&&c.otrosGastos)gastos.push({label:c.labelOtros||'Otros gastos',val:parseFloat(c.otrosGastos)});
+  if(c.tieneRetenciones){var retVal=getTotalFact(c)*parseFloat(c.pctRetenciones||0)/100;if(retVal>0)gastos.push({label:'Retenciones sufridas ('+c.pctRetenciones+'% - pago a cuenta DGR)',val:retVal});}
   return gastos;
 }
 
@@ -305,6 +307,7 @@ function renderMain(){
   var thTUS=c.tieneTasasNac?'<th style="color:#844;background:#fff0f0">TUSV ($)</th>':'';
   var thCNT=c.tieneTasasNac?'<th style="color:#844;background:#fff0f0">CNT ($)</th>':'';
   var thMun=c.tieneTasaMunicipal?'<th style="color:#844;background:#fff0f0">T.Municipal ($)</th>':'';
+  var thRen=c.tieneRentas?'<th style="color:#844;background:#fff0f0">'+(c.labelRentas||'Rentas/DGR')+' ($)</th>':'';
   var thAlq=c.tieneAlquiler?'<th style="color:#844;background:#fff0f0">Alquiler ($)</th>':'';
   var thLuz=c.tieneLuz?'<th style="color:#844;background:#fff0f0">Luz ($)</th>':'';
   var thInt=c.tieneInternet?'<th style="color:#844;background:#fff0f0">Internet/Cel ($)</th>':'';
@@ -326,6 +329,7 @@ function renderMain(){
       var cnt=getV(c,m,'cnt')||'';if(cnt===0)cnt='';filas+='<td style="background:#fff8f8"><input type="number" value="'+cnt+'" placeholder="0" oninput="upM('+m+',\'cnt\',this.value)"></td>';
     }
     if(c.tieneTasaMunicipal){var mun=getV(c,m,'mun')||'';if(mun===0)mun='';filas+='<td style="background:#fff8f8"><input type="number" value="'+mun+'" placeholder="0" oninput="upM('+m+',\'mun\',this.value)"></td>';}
+    if(c.tieneRentas){var renv=getV(c,m,'ren');var rend=renv>0?renv:'';filas+='<td style="background:#fff8f8"><input type="number" value="'+rend+'" placeholder="0" oninput="upM('+m+',\'ren\',this.value)"></td>';}
     if(c.tieneAlquiler){var alqv=getV(c,m,'alq');var alqd=alqv>0?alqv:'';filas+='<td style="background:#fff8f8"><input type="number" value="'+alqd+'" placeholder="0" oninput="upM('+m+',\'alq\',this.value)"></td>';}
     if(c.tieneLuz){var luzv=getV(c,m,'luz');var luzd=luzv>0?luzv:'';filas+='<td style="background:#fff8f8"><input type="number" value="'+luzd+'" placeholder="0" oninput="upM('+m+',\'luz\',this.value)"></td>';}
     if(c.tieneInternet){var intv=getV(c,m,'int');var intd=intv>0?intv:'';filas+='<td style="background:#fff8f8"><input type="number" value="'+intd+'" placeholder="0" oninput="upM('+m+',\'int\',this.value)"></td>';}
@@ -340,10 +344,13 @@ function renderMain(){
   gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g3"'+(c.tieneAlquiler?' checked':'')+' onchange="up(\'tieneAlquiler\',this.checked);renderMain()"><label for="g3">Paga alquiler <small style="color:#aaa">(cargá el importe mes a mes en Facturación)</small></label></div>';
   gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g4"'+(c.tieneLuz?' checked':'')+' onchange="up(\'tieneLuz\',this.checked);renderMain()"><label for="g4">Paga luz <small style="color:#aaa">(cargá el importe mes a mes en Facturación)</small></label></div>';
   gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g5"'+(c.tieneInternet?' checked':'')+' onchange="up(\'tieneInternet\',this.checked);renderMain()"><label for="g5">Paga internet / celular <small style="color:#aaa">(cargá el importe mes a mes en Facturación)</small></label></div>';
-  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g6"'+(c.tieneRentas?' checked':'')+' onchange="up(\'tieneRentas\',this.checked);renderMain()"><label for="g6">Paga Rentas / DGR provincial</label></div>';
-  if(c.tieneRentas)gastosOpc+='<div style="margin:0 0 10px 28px" class="row g2"><div><label>Nombre (ej: DGR Corrientes)</label><input type="text" value="'+(c.labelRentas||'Rentas / DGR')+'" oninput="up(\'labelRentas\',this.value)"></div><div><label>Importe anual total ($)</label><input type="number" value="'+(c.rentas||'')+'" oninput="up(\'rentas\',this.value)"></div></div>';
+  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g6"'+(c.tieneRentas?' checked':'')+' onchange="up(\'tieneRentas\',this.checked);renderMain()"><label for="g6">Paga Rentas / DGR provincial <small style="color:#aaa">(cargá el importe mes a mes en Facturación)</small></label></div>';
+  if(c.tieneRentas)gastosOpc+='<div style="margin:0 0 10px 28px" class="row g2"><div><label>Nombre (ej: DGR Corrientes)</label><input type="text" value="'+(c.labelRentas||'Rentas / DGR')+'" oninput="up(\'labelRentas\',this.value)"></div></div>';
   gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g7"'+(c.tieneOtrosGastos?' checked':'')+' onchange="up(\'tieneOtrosGastos\',this.checked);renderMain()"><label for="g7">Otros gastos</label></div>';
   if(c.tieneOtrosGastos)gastosOpc+='<div style="margin:0 0 10px 28px" class="row g2"><div><label>Descripción</label><input type="text" value="'+(c.labelOtros||'Otros gastos')+'" oninput="up(\'labelOtros\',this.value)"></div><div><label>Importe anual total ($)</label><input type="number" value="'+(c.otrosGastos||'')+'" oninput="up(\'otrosGastos\',this.value)"></div></div>';
+  gastosOpc+='<div class="toggle-row"><input type="checkbox" id="g8"'+(c.tieneRetenciones?' checked':'')+' onchange="up(\'tieneRetenciones\',this.checked);renderMain()"><label for="g8">Tiene retenciones sufridas (pago a cuenta DGR)</label></div>';
+  if(c.tieneRetenciones)gastosOpc+='<div style="margin:0 0 10px 28px" class="row g2"><div><label>% de retención sobre facturación</label><input type="number" value="'+(c.pctRetenciones||3)+'" min="0" max="100" step="0.1" oninput="up(\'pctRetenciones\',this.value)"></div><div style="display:flex;align-items:flex-end;padding-bottom:8px"><span style="font-size:12px;color:#888">Se descuenta como pago a cuenta de DGR</span></div></div>';'''
+  '''
     var arcaHtml=c.arcaDeuda?'<div class="row g2"><div><label>Saldo deudor ($)</label><input type="number" value="'+(c.arcaDeudor||'')+'" oninput="up(\'arcaDeudor\',this.value)"></div><div><label>Obligación mensual ($)</label><input type="number" value="'+(c.arcaMensual||'')+'" oninput="up(\'arcaMensual\',this.value)"></div></div><div><label>Nota</label><textarea oninput="up(\'arcaNota\',this.value)">'+(c.arcaNota||'')+'</textarea></div>':'<p style="font-size:13px;color:#aaa;padding:4px 0">Sin deuda · Al día</p>';
   var atpHtml=!c.atpAldia?'<div><label>Deuda pendiente ($)</label><input type="number" value="'+(c.atpDeuda||'')+'" oninput="up(\'atpDeuda\',this.value)"></div>':'<p style="font-size:13px;color:#aaa;padding:4px 0">Al día</p>';
   var mipymeHtml=c.tieneMipyme?'<div class="card"><div class="card-title">Certificado MiPyme</div><div class="row g2"><div><label>Válido hasta</label><input type="date" value="'+(c.mipymeVence||'')+'" onchange="up(\'mipymeVence\',this.value)"></div><div><label>Categoría</label><select onchange="up(\'mipymeCat\',this.value)"><option'+((c.mipymeCat||'Micro')==='Micro'?' selected':'')+'>Micro</option><option'+(c.mipymeCat==='Pequeña'?' selected':'')+'>Pequeña</option><option'+(c.mipymeCat==='Mediana'?' selected':'')+'>Mediana</option></select></div></div></div>':'';
@@ -391,7 +398,7 @@ function renderMain(){
       '<div class="card"><div class="card-title">Ingresos y obligaciones mensuales · '+c.anio+'</div>'+
         '<p style="font-size:12px;margin-bottom:12px"><span class="col-header-fact">Azul = facturación e ingresos</span> &nbsp; <span class="col-header-oblig">Rosa = obligaciones mensuales</span></p>'+
         '<div style="overflow-x:auto"><table class="month-table">'+
-          '<thead><tr><th>Mes</th>'+thRubros+thFR+thATP+thMono+thTUS+thCNT+thMun+thAlq+thLuz+thInt+
+          '<thead><tr><th>Mes</th>'+thRubros+thFR+thATP+thMono+thTUS+thCNT+thMun+thRen+thAlq+thLuz+thInt+
           '<th style="text-align:right">Total Fact.</th></tr></thead>'+
           '<tbody>'+filas+'</tbody>'+
           '<tfoot><tr class="total-row"><td>Total</td>'+totRubros+
@@ -399,6 +406,7 @@ function renderMain(){
           '<td></td><td></td>'+
           (c.tieneTasasNac?'<td></td><td></td>':'')+
           (c.tieneTasaMunicipal?'<td></td>':'')+
+          (c.tieneRentas?'<td></td>':'')+
           (c.tieneAlquiler?'<td></td>':'')+
           (c.tieneLuz?'<td></td>':'')+
           (c.tieneInternet?'<td></td>':'')+
