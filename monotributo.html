@@ -735,8 +735,8 @@ function buildChecklist(c){
     }
   }
 
-  // 15. ADVERTENCIA SALDOS BANCARIOS
-  items.push({tipo:'info',texto:'RESPONSABILIDAD DEL CLIENTE: Los movimientos en cuentas bancarias y billeteras virtuales deben coincidir con la facturación declarada. ARCA puede cruzar saldos bancarios con ingresos declarados. Es responsabilidad exclusiva del cliente declarar todas sus operaciones, incluyendo cobros en efectivo.'});
+  // 15. ADVERTENCIA DECLARACIÓN TOTAL DE INGRESOS
+  items.push({tipo:'info',texto:'RESPONSABILIDAD DEL CLIENTE: Toda operación debe ser declarada y facturada, sin importar el medio de cobro (efectivo, transferencia, billetera virtual o tarjeta). ARCA cruza los movimientos bancarios con la facturación declarada. Si hay cobros en efectivo que no se facturan, esos ingresos no declarados generan inconsistencias que pueden derivar en fiscalizaciones o exclusión del régimen.'});
 
   // 10. MIPYME
   if(c.tieneMipyme&&c.mipymeVence){
@@ -1222,8 +1222,7 @@ function generarPDF(){
   // Exclusion regimen
   if(pdfAcum>108357084.05) checks.push({ok:false,t:'EXCLUSION DEL REGIMEN: Acumulado supera limite categoria K. Debe inscribirse como Responsable Inscripto.'});
   // Meses sin facturacion
-  var pdfMCero=0;for(var mi2=0;mi2<12;mi2++){var tot2=0;for(var ri2=0;ri2<c.rubros.length;ri2++)tot2+=getV(c,mi2,'r'+ri2);if(tot2===0)pdfMCero++;}
-  if(12-pdfMCero>0&&pdfMCero>=2) checks.push({ok:null,t:pdfMCero+' meses sin facturacion. Verificar actividad no declarada o justificar inactividad.'});
+  // Meses sin facturacion: se controla solo en la app
   // Superficie
   var pdfLim=LIMITES_CAT[c.categoria];
   if(pdfLim&&c.superficie&&parseFloat(c.superficie)>0){
@@ -1242,7 +1241,7 @@ function generarPDF(){
     if(pdfAlqA>0){if(pdfAlqA>pdfLim.alqMax) checks.push({ok:false,t:'Alquiler anual ($'+fmt(pdfAlqA)+') supera tope categoria '+c.categoria+' ($'+fmt(pdfLim.alqMax)+'). Riesgo de exclusion.'});
     else checks.push({ok:true,t:'Alquiler anual ($'+fmt(pdfAlqA)+') dentro del tope ($'+fmt(pdfLim.alqMax)+'). '});}}
   // Saldos bancarios - advertencia fija
-  checks.push({ok:null,t:'RESPONSABILIDAD DEL CLIENTE: Los movimientos bancarios y en billeteras virtuales deben coincidir con la facturacion declarada. ARCA puede cruzar saldos con ingresos declarados. Es responsabilidad del cliente declarar todas las operaciones, incluyendo cobros en efectivo.'});
+  checks.push({ok:null,t:'RESPONSABILIDAD DEL CLIENTE: Toda operacion debe ser declarada y facturada, sin importar el medio de cobro (efectivo, transferencia, billetera virtual o tarjeta). ARCA cruza movimientos bancarios con la facturacion declarada. Los cobros en efectivo no facturados generan inconsistencias que pueden derivar en fiscalizaciones o exclusion del regimen.'});
   // MiPyme
   if(c.tieneMipyme&&c.mipymeVence){
     var hoyM=new Date();var vencM2=new Date(c.mipymeVence);var diasM2=Math.round((vencM2-hoyM)/(1000*60*60*24));
