@@ -435,9 +435,11 @@ function renderMain(){
       '<div class="card"><div class="card-title">ARCA</div>'+arcaHtml+'</div>'+
       '<div class="card"><div class="card-title">ATP</div>'+atpHtml+'</div>'+
       munHtml+mipymeHtml+
-      '<div class="card"><div class="card-title">Asesoramiento / Notas del mes</div>'+
-      '<textarea style="width:100%;min-height:120px;font-size:13px;border:1px solid #ddd;border-radius:6px;padding:8px;resize:vertical" placeholder="Escribí acá el asesoramiento o notas específicas para este cliente este mes..." oninput="up(\'asesoramiento\',this.value)">'+(c.asesoramiento||'')+'</textarea>'+
-      '</div>'+
+      '<div class="card"><div class="card-title">Asesoramiento del mes</div>'+
+      '<div id="checklist-container"></div>'+
+      '<div style="margin-top:12px"><label style="font-size:12px;color:#777;font-weight:500;display:block;margin-bottom:4px">Notas adicionales / Asesoramiento libre</label>'+
+      '<textarea id="asesora-txt" style="width:100%;min-height:100px;font-size:13px;border:1px solid #ddd;border-radius:6px;padding:8px;resize:vertical" placeholder="Agregá cualquier comentario adicional personalizado para este cliente..." oninput="up(\'asesoramiento\',this.value)">'+(c.asesoramiento||'')+'</textarea>'+
+      '</div></div>'+
     '</div>'+
 
     // GASTOS Y GANANCIA
@@ -470,6 +472,7 @@ function renderMain(){
   calcTotales();
   renderGastosLive(c, getTotalFact(c));
   renderRecat();
+  setTimeout(function(){buildChecklist(getClient());},50);
 }
 
 function renderGastosLive(c, totalFact){
@@ -547,6 +550,135 @@ function renderRecat(){
   el.innerHTML=html;
 }
 
+function buildChecklist(c){
+  var el=document.getElementById('checklist-container');
+  if(!el)return;
+  var totalFact=getTotalFact(c);
+  var gastos=getGastosCompletos(c);
+  var totalGastos=0;for(var i=0;i<gastos.length;i++)totalGastos+=gastos[i].val;
+  var pct=totalFact>0?(totalGastos/totalFact*100):0;
+  var semAnt=parseFloat(c.semAnterior||0);
+  var acumulado=totalFact+semAnt;
+  var catActual=null;
+  for(var i=0;i<CATEGORIAS_2026.length;i++){if(CATEGORIAS_2026[i].cat===c.categoria){catActual=CATEGORIAS_2026[i];break;}}
+  var margen=catActual?catActual.limite-acumulado:0;
+  var pctUsado=catActual?(acumulado/catActual.limite*100):0;
+
+  var items=[];
+
+  // 1. CONTROL DE FACTURACIÓN
+  if(totalFact>0){
+    items.push({tipo:'ok',texto:'Facturación acumulada: $'+fmt(totalFact)});
+  } else {
+    items.push({tipo:'warn',texto:'Sin facturación cargada en el período'});
+  }
+
+  // 2. CONTROL DE CATEGORÍA Y MARGEN
+  if(catActual){
+    if(margen<0){
+      items.push({tipo:'danger',texto:'⚠ SUPERÓ el límite de categoría '+c.categoria+' por $'+fmt(Math.abs(margen))+'. Debe recategorizarse.'});
+    } else if(pctUsado>=90){
+      items.push({tipo:'danger',texto:'⚠ Usó el '+pctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(margen)+'. Riesgo de exclusión inminente.'});
+    } else if(pctUsado>=75){
+      items.push({tipo:'warn',texto:'Usó el '+pctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(margen)+'. Monitorear facturación.'});
+    } else {
+      items.push({tipo:'ok',texto:'Dentro de la categoría '+c.categoria+'. Puede facturar $'+fmt(margen)+' más.'});
+    }
+  }
+
+  // 3. CONTROL % GASTOS / FACTURACIÓN
+  if(totalFact>0){
+    if(pct>90){
+      items.push({tipo:'danger',texto:'% Gastos/Facturación muy alto: '+pct.toFixed(1)+'%. Ganancia muy baja. Revisar estructura de costos.'});
+    } else if(pct>75){
+      items.push({tipo:'warn',texto:'% Gastos/Facturación elevado: '+pct.toFixed(1)+'%. Ganancia ajustada.'});
+    } else {
+      items.push({tipo:'ok',texto:'% Gastos/Facturación saludable: '+pct.toFixed(1)+'%.'});
+    }
+  }
+
+  // 4. CONTROL ARCA
+  if(c.arcaDeuda){
+    items.push({tipo:'danger',texto:'Deuda en ARCA: $'+fmt(c.arcaDeudor)+'. Obligación mensual: $'+fmt(c.arcaMensual)+'. Verificar plan de pago.'});
+  } else {
+    items.push({tipo:'ok',texto:'ARCA: Sin deuda. Al día.'});
+  }
+
+  // 5. CONTROL ATP/DGR
+  if(!c.atpAldia){
+    items.push({tipo:'warn',texto:(c.labelATP||'ATP')+' con deuda pendiente: $'+fmt(c.atpDeuda)+'. Regularizar.'});
+  } else {
+    items.push({tipo:'ok',texto:(c.labelATP||'ATP')+': Al día.'});
+  }
+
+  // 6. CONTROL VENCIMIENTO
+  if(c.vencFecha){
+    var hoy=new Date();
+    var venc=new Date(c.vencFecha);
+    var dias=Math.round((venc-hoy)/(1000*60*60*24));
+    if(dias<0){
+      items.push({tipo:'danger',texto:'⚠ Vencimiento VENCIDO el '+c.vencFecha+'. Importe: $'+fmt(c.vencImporte)+'. Pagar con urgencia.'});
+    } else if(dias<=5){
+      items.push({tipo:'danger',texto:'⚠ Vencimiento en '+dias+' días ('+c.vencFecha+'). Importe: $'+fmt(c.vencImporte)+'.'});
+    } else if(dias<=15){
+      items.push({tipo:'warn',texto:'Próximo vencimiento: '+c.vencFecha+' ('+dias+' días). Importe: $'+fmt(c.vencImporte)+'.'});
+    } else {
+      items.push({tipo:'ok',texto:'Vencimiento: '+c.vencFecha+' ('+dias+' días). Importe: $'+fmt(c.vencImporte)+'.'});
+    }
+  } else {
+    items.push({tipo:'warn',texto:'Sin fecha de vencimiento cargada. Completar en Obligaciones.'});
+  }
+
+  // 7. CONTROL COMPROBANTES RECIBIDOS
+  if(c.tieneFactRec){
+    var frT=0;for(var m=0;m<12;m++)frT+=getV(c,m,'fr');
+    if(frT>0){
+      var pctFR=totalFact>0?(frT/totalFact*100):0;
+      items.push({tipo:'ok',texto:'Comprobantes recibidos: $'+fmt(frT)+' ('+pctFR.toFixed(1)+'% de la facturación).'});
+    } else {
+      items.push({tipo:'warn',texto:'Sin comprobantes de compras cargados. Solicitar facturas de proveedores.'});
+    }
+  }
+
+  // 8. CONTROL RECATEGORIZACIÓN PRÓXIMA
+  if(c.recatFecha){
+    items.push({tipo:'info',texto:'Próxima recategorización: '+c.recatFecha.toUpperCase()+'. Acumulado actual: $'+fmt(acumulado)+'.'});
+  }
+
+  // 9. MONOTRIBUTISTA SOCIAL
+  if(c.esSocial||c.categoria==='S'){
+    items.push({tipo:'info',texto:'Monotributista Social: verificar compatibilidad con programas sociales vigentes y tope de ingresos.'});
+  }
+
+  // 10. MIPYME
+  if(c.tieneMipyme&&c.mipymeVence){
+    var hoy2=new Date();
+    var vencM=new Date(c.mipymeVence);
+    var diasM=Math.round((vencM-hoy2)/(1000*60*60*24));
+    if(diasM<0){
+      items.push({tipo:'danger',texto:'⚠ Certificado MiPyme VENCIDO el '+c.mipymeVence+'. Renovar urgente.'});
+    } else if(diasM<=30){
+      items.push({tipo:'warn',texto:'Certificado MiPyme vence en '+diasM+' días. Renovar pronto.'});
+    } else {
+      items.push({tipo:'ok',texto:'Certificado MiPyme vigente hasta '+c.mipymeVence+'.'});
+    }
+  }
+
+  // Renderizar
+  var colores={ok:'#e8f8ed',warn:'#fff8e0',danger:'#fff0f0',info:'#eef2f7'};
+  var iconos={ok:'✓',warn:'⚠',danger:'✗',info:'ℹ'};
+  var textos={ok:'#27ae60',warn:'#d68000',danger:'#c0392b',info:'#58677e'};
+  var html2='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">';
+  for(var i=0;i<items.length;i++){
+    var it=items[i];
+    html2+='<div style="background:'+colores[it.tipo]+';border-radius:7px;padding:8px 12px;font-size:12px;color:'+textos[it.tipo]+';display:flex;gap:8px;align-items:flex-start">'+
+      '<span style="font-weight:700;flex-shrink:0">'+iconos[it.tipo]+'</span>'+
+      '<span>'+it.texto+'</span></div>';
+  }
+  html2+='</div>';
+  el.innerHTML=html2;
+}
+
 function showTab(id,el){
   document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
@@ -556,6 +688,7 @@ function showTab(id,el){
   if(id==='preview')buildPreview(c);
   if(id==='gastos')renderGastosLive(c,getTotalFact(c));
   if(id==='recat')renderRecat();
+  if(id==='obligaciones')buildChecklist(c);
 }
 
 function fmt(n){return parseFloat(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});}
@@ -945,16 +1078,98 @@ function generarPDF(){
   }
 
   // Asesoramiento - siempre en página nueva
+  doc.addPage();y=20;
+  sect(secNum+'- ASESORAMIENTO');secNum++;
+
+  // Checklist automático en PDF
+  var pdfTotalFact=getTotalFact(c);
+  var pdfGastos=getGastosCompletos(c);
+  var pdfTotalGastos=0;for(var gi=0;gi<pdfGastos.length;gi++)pdfTotalGastos+=pdfGastos[gi].val;
+  var pdfPct=pdfTotalFact>0?(pdfTotalGastos/pdfTotalFact*100):0;
+  var pdfSemAnt=parseFloat(c.semAnterior||0);
+  var pdfAcum=pdfTotalFact+pdfSemAnt;
+  var pdfCatA=null;for(var ci=0;ci<CATEGORIAS_2026.length;ci++){if(CATEGORIAS_2026[ci].cat===c.categoria){pdfCatA=CATEGORIAS_2026[ci];break;}}
+  var pdfMargenA=pdfCatA?pdfCatA.limite-pdfAcum:0;
+  var pdfPctUsado=pdfCatA?(pdfAcum/pdfCatA.limite*100):0;
+
+  var checks=[];
+  // Facturación
+  if(pdfTotalFact>0) checks.push({ok:true,t:'Facturación acumulada: $'+fmt(pdfTotalFact)});
+  else checks.push({ok:false,t:'Sin facturación cargada en el período'});
+  // Categoría
+  if(pdfCatA){
+    if(pdfMargenA<0) checks.push({ok:false,t:'SUPERÓ el límite de categoría '+c.categoria+' por $'+fmt(Math.abs(pdfMargenA))+'. Debe recategorizarse.'});
+    else if(pdfPctUsado>=90) checks.push({ok:false,t:'Usó el '+pdfPctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(pdfMargenA)+'. Riesgo de exclusión.'});
+    else if(pdfPctUsado>=75) checks.push({ok:null,t:'Usó el '+pdfPctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(pdfMargenA)+'. Monitorear.'});
+    else checks.push({ok:true,t:'Dentro de la categoría. Puede facturar $'+fmt(pdfMargenA)+' más.'});
+  }
+  // Gastos
+  if(pdfTotalFact>0){
+    if(pdfPct>90) checks.push({ok:false,t:'% Gastos/Facturación muy alto: '+pdfPct.toFixed(1)+'%. Revisar costos.'});
+    else if(pdfPct>75) checks.push({ok:null,t:'% Gastos/Facturación elevado: '+pdfPct.toFixed(1)+'%.'});
+    else checks.push({ok:true,t:'% Gastos/Facturación saludable: '+pdfPct.toFixed(1)+'%.'});
+  }
+  // ARCA
+  if(c.arcaDeuda) checks.push({ok:false,t:'Deuda en ARCA: $'+fmt(c.arcaDeudor)+'. Verificar plan de pago.'});
+  else checks.push({ok:true,t:'ARCA: Sin deuda. Al día.'});
+  // ATP/DGR
+  if(!c.atpAldia) checks.push({ok:false,t:(c.labelATP||'ATP')+' con deuda: $'+fmt(c.atpDeuda)+'.'});
+  else checks.push({ok:true,t:(c.labelATP||'ATP')+': Al día.'});
+  // Vencimiento
+  if(c.vencFecha){
+    var hoyP=new Date();var vencP=new Date(c.vencFecha);
+    var diasP=Math.round((vencP-hoyP)/(1000*60*60*24));
+    if(diasP<0) checks.push({ok:false,t:'Vencimiento VENCIDO el '+c.vencFecha+'. Importe: $'+fmt(c.vencImporte)+'.'});
+    else if(diasP<=10) checks.push({ok:false,t:'Vencimiento en '+diasP+' días ('+c.vencFecha+'). Importe: $'+fmt(c.vencImporte)+'.'});
+    else checks.push({ok:true,t:'Próximo vencimiento: '+c.vencFecha+'. Importe: $'+fmt(c.vencImporte)+'.'});
+  }
+  // Comprobantes
+  if(c.tieneFactRec){var frPdf=0;for(var m=0;m<12;m++)frPdf+=getV(c,m,'fr');
+    if(frPdf>0) checks.push({ok:true,t:'Comprobantes recibidos: $'+fmt(frPdf)+'.'});
+    else checks.push({ok:null,t:'Sin comprobantes de compras. Solicitar facturas de proveedores.'});}
+  // Recategorización
+  if(c.recatFecha) checks.push({ok:true,t:'Próxima recategorización: '+c.recatFecha.toUpperCase()+'. Acumulado: $'+fmt(pdfAcum)+'.'});
+  // Social
+  if(c.esSocial||c.categoria==='S') checks.push({ok:null,t:'Monotributista Social: verificar compatibilidad con programas sociales y tope de ingresos.'});
+  // MiPyme
+  if(c.tieneMipyme&&c.mipymeVence){
+    var hoyM=new Date();var vencM2=new Date(c.mipymeVence);var diasM2=Math.round((vencM2-hoyM)/(1000*60*60*24));
+    if(diasM2<0) checks.push({ok:false,t:'Certificado MiPyme VENCIDO. Renovar urgente.'});
+    else if(diasM2<=30) checks.push({ok:null,t:'MiPyme vence en '+diasM2+' días. Renovar pronto.'});
+    else checks.push({ok:true,t:'MiPyme vigente hasta '+c.mipymeVence+'.'});
+  }
+
+  // Dibujar checklist en PDF
+  for(var chi=0;chi<checks.length;chi++){
+    if(y>270){doc.addPage();y=20;}
+    var chk=checks[chi];
+    var bgC=chk.ok===true?[232,248,237]:chk.ok===false?[255,240,240]:[255,248,224];
+    var txC=chk.ok===true?[39,120,60]:chk.ok===false?[180,40,40]:[180,120,0];
+    var ico=chk.ok===true?'✓':chk.ok===false?'✗':'!';
+    doc.setFillColor(bgC[0],bgC[1],bgC[2]);
+    var chLines=doc.splitTextToSize(chk.t,W-M*2-14);
+    var chH=chLines.length*5+8;
+    doc.roundedRect(M,y,W-M*2,chH,2,2,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(txC[0],txC[1],txC[2]);
+    doc.text(ico,M+4,y+chH/2+1.5);
+    doc.setFont('helvetica','normal');
+    doc.text(chLines,M+10,y+6);
+    y+=chH+3;
+  }
+
+  // Notas adicionales libres
   if(c.asesoramiento&&String(c.asesoramiento).trim().length>0){
-    doc.addPage();y=20;
-    sect(secNum+'- ASESORAMIENTO');secNum++;
-    var aLines=doc.splitTextToSize(c.asesoramiento,W-M*2-8);
-    var aBoxH=aLines.length*5.5+12;
-    doc.setFillColor(248,252,248);doc.roundedRect(M,y,W-M*2,aBoxH,2,2,'F');
-    doc.setDrawColor(180,220,180);doc.roundedRect(M,y,W-M*2,aBoxH,2,2);
+    y+=4;
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(88,103,126);
+    doc.text('Notas adicionales:',M,y);y+=6;
+    var aLines2=doc.splitTextToSize(String(c.asesoramiento),W-M*2-8);
+    var aBoxH2=aLines2.length*5.5+12;
+    if(y+aBoxH2>275){doc.addPage();y=20;}
+    doc.setFillColor(248,252,248);doc.roundedRect(M,y,W-M*2,aBoxH2,2,2,'F');
+    doc.setDrawColor(180,220,180);doc.roundedRect(M,y,W-M*2,aBoxH2,2,2);
     doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(50,50,50);
-    doc.text(aLines,M+4,y+8);
-    y+=aBoxH+6;
+    doc.text(aLines2,M+4,y+8);
+    y+=aBoxH2+6;
   }
 
   // ===== PÁGINA FINAL: CONTACTO =====
