@@ -1250,21 +1250,28 @@ function generarPDF(){
     else checks.push({ok:true,t:'MiPyme vigente hasta '+c.mipymeVence+'.'});
   }
 
-  // Dibujar checklist en PDF
+  // Dibujar checklist en PDF - diseño prolijo
   for(var chi=0;chi<checks.length;chi++){
     if(y>270){doc.addPage();y=20;}
     var chk=checks[chi];
     var bgC=chk.ok===true?[232,248,237]:chk.ok===false?[255,240,240]:[255,248,224];
     var txC=chk.ok===true?[39,120,60]:chk.ok===false?[180,40,40]:[180,120,0];
-    var ico=chk.ok===true?'OK':chk.ok===false?'ERROR':'!';
+    var ico=chk.ok===true?'OK':chk.ok===false?'X':'!';
+    // Calcular alto del bloque
+    var txtAncho=W-M*2-22;
+    var chLines=doc.splitTextToSize(chk.t,txtAncho);
+    var chH=Math.max(chLines.length*5+8,12);
+    // Fondo del bloque
     doc.setFillColor(bgC[0],bgC[1],bgC[2]);
-    var chLines=doc.splitTextToSize(chk.t,W-M*2-14);
-    var chH=chLines.length*5+8;
     doc.roundedRect(M,y,W-M*2,chH,2,2,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(txC[0],txC[1],txC[2]);
-    doc.text(ico,M+4,y+chH/2+1.5);
-    doc.setFont('helvetica','normal');
-    doc.text(chLines,M+10,y+6);
+    // Badge de estado (cuadradito a la izquierda)
+    doc.setFillColor(txC[0],txC[1],txC[2]);
+    doc.roundedRect(M+2,y+2,10,chH-4,1,1,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(255,255,255);
+    doc.text(ico,M+7,y+chH/2+1,{align:'center'});
+    // Texto del ítem alineado a la derecha del badge
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(txC[0],txC[1],txC[2]);
+    doc.text(chLines,M+15,y+6);
     y+=chH+3;
   }
 
