@@ -379,7 +379,7 @@ function renderMain(){
   var arcaHtml=c.arcaDeuda?'<div class="row g2"><div><label>Saldo deudor ($)</label><input type="number" value="'+(c.arcaDeudor||'')+'" oninput="up(\'arcaDeudor\',this.value)"></div><div><label>Obligación mensual ($)</label><input type="number" value="'+(c.arcaMensual||'')+'" oninput="up(\'arcaMensual\',this.value)"></div></div><div><label>Nota</label><textarea oninput="up(\'arcaNota\',this.value)">'+(c.arcaNota||'')+'</textarea></div>':'<p style="font-size:13px;color:#aaa;padding:4px 0">Sin deuda · Al día</p>';
   var atpHtml=!c.atpAldia?
   '<div class="row g2">'+
-  '<div><label>Descripcion de la deuda</label><input type="text" value="'+(c.atpDeuda||'')+'" placeholder="Ej: Cuotas impagas" oninput="up(\'atpDeuda\',this.value)"></div>'+
+  '<div><label>Descripción de la deuda</label><input type="text" value="'+(c.atpDeuda||'')+'" placeholder="Ej: Cuotas impagas" oninput="up(\'atpDeuda\',this.value)"></div>'+
   '<div><label>Importe de la deuda ($)</label><input type="number" value="'+(c.atpDeudaImporte||'')+'" placeholder="Ej: 25000" oninput="up(\'atpDeudaImporte\',this.value)"></div>'+
   '</div>'
   :'<p style="font-size:13px;color:#aaa;padding:4px 0">Al dia</p>';
@@ -592,7 +592,7 @@ function buildChecklist(c){
   var semAnt=parseFloat(c.semAnterior||0);
   var acumulado=totalFact+semAnt;
   var catActual=null;
-  for(var i=0;i<CATEGORIAS_2026.length;i++){if(CATEGORIAS_2026[i].cat===c.categoria){catActual=CATEGORIAS_2026[i];break;}}
+  for(var i=0;i<CATEGORIAS_2026.length;i++){if(CATEGORIAS_2026[i].cat===c.categoría){catActual=CATEGORIAS_2026[i];break;}}
   var margen=catActual?catActual.limite-acumulado:0;
   var pctUsado=catActual?(acumulado/catActual.limite*100):0;
 
@@ -608,13 +608,13 @@ function buildChecklist(c){
   // 2. CONTROL DE CATEGORÍA Y MARGEN
   if(catActual){
     if(margen<0){
-      items.push({tipo:'danger',texto:'⚠ SUPERÓ el límite de categoría '+c.categoria+' por $'+fmt(Math.abs(margen))+'. Debe recategorizarse.'});
+      items.push({tipo:'danger',texto:'⚠ SUPERÓ el límite de categoría '+c.categoría+' por $'+fmt(Math.abs(margen))+'. Debe recategorizarse.'});
     } else if(pctUsado>=90){
       items.push({tipo:'danger',texto:'⚠ Usó el '+pctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(margen)+'. Riesgo de exclusión inminente.'});
     } else if(pctUsado>=75){
       items.push({tipo:'warn',texto:'Usó el '+pctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(margen)+'. Monitorear facturación.'});
     } else {
-      items.push({tipo:'ok',texto:'Dentro de la categoría '+c.categoria+'. Puede facturar $'+fmt(margen)+' más.'});
+      items.push({tipo:'ok',texto:'Dentro de la categoría '+c.categoría+'. Puede facturar $'+fmt(margen)+' más.'});
     }
   }
 
@@ -644,7 +644,7 @@ function buildChecklist(c){
     atpMsg+='. Regularizar.';
     items.push({tipo:'warn',texto:atpMsg});
   } else {
-    items.push({tipo:'ok',texto:(c.labelATP||'ATP')+': Al dia.'});
+    items.push({tipo:'ok',texto:(c.labelATP||'ATP')+': Al día.'});
   }
 
   // 6. CONTROL VENCIMIENTO
@@ -682,7 +682,7 @@ function buildChecklist(c){
   }
 
   // 9. MONOTRIBUTISTA SOCIAL
-  if(c.esSocial||c.categoria==='S'){
+  if(c.esSocial||c.categoría==='S'){
     items.push({tipo:'info',texto:'Monotributista Social: verificar compatibilidad con programas sociales vigentes y tope de ingresos.'});
   }
 
@@ -703,15 +703,15 @@ function buildChecklist(c){
   }
 
   // 12. CONTROL SUPERFICIE M²
-  var limCat=LIMITES_CAT[c.categoria];
+  var limCat=LIMITES_CAT[c.categoría];
   if(limCat&&c.superficie&&parseFloat(c.superficie)>0){
     var supV=parseFloat(c.superficie);
     if(supV>limCat.m2){
-      items.push({tipo:'danger',texto:'⚠ Superficie del local ('+supV+' m²) SUPERA el límite para categoría '+c.categoria+' ('+limCat.m2+' m²). Riesgo de exclusión.'});
+      items.push({tipo:'danger',texto:'⚠ Superficie del local ('+supV+' m²) SUPERA el límite para categoría '+c.categoría+' ('+limCat.m2+' m²). Riesgo de exclusión.'});
     } else if(supV>limCat.m2*0.85){
-      items.push({tipo:'warn',texto:'Superficie del local ('+supV+' m²) cercana al límite para categoría '+c.categoria+' ('+limCat.m2+' m²).'});
+      items.push({tipo:'warn',texto:'Superficie del local ('+supV+' m²) cercana al límite para categoría '+c.categoría+' ('+limCat.m2+' m²).'});
     } else {
-      items.push({tipo:'ok',texto:'Superficie del local ('+supV+' m²) dentro del límite para categoría '+c.categoria+' ('+limCat.m2+' m²).'});
+      items.push({tipo:'ok',texto:'Superficie del local ('+supV+' m²) dentro del límite para categoría '+c.categoría+' ('+limCat.m2+' m²).'});
     }
   }
 
@@ -724,11 +724,11 @@ function buildChecklist(c){
   if(limCat&&c.kwAnual&&parseFloat(c.kwAnual)>0){
     var kwV=parseFloat(c.kwAnual);
     if(kwV>limCat.kw){
-      items.push({tipo:'danger',texto:'⚠ Consumo eléctrico ('+kwV+' KW) SUPERA el límite para categoría '+c.categoria+' ('+limCat.kw+' KW). Riesgo de exclusión.'});
+      items.push({tipo:'danger',texto:'⚠ Consumo eléctrico ('+kwV+' KW) SUPERA el límite para categoría '+c.categoría+' ('+limCat.kw+' KW). Riesgo de exclusión.'});
     } else if(kwV>limCat.kw*0.85){
-      items.push({tipo:'warn',texto:'Consumo eléctrico ('+kwV+' KW) cercano al límite para categoría '+c.categoria+' ('+limCat.kw+' KW).'});
+      items.push({tipo:'warn',texto:'Consumo eléctrico ('+kwV+' KW) cercano al límite para categoría '+c.categoría+' ('+limCat.kw+' KW).'});
     } else {
-      items.push({tipo:'ok',texto:'Consumo eléctrico ('+kwV+' KW) dentro del límite para categoría '+c.categoria+' ('+limCat.kw+' KW).'});
+      items.push({tipo:'ok',texto:'Consumo eléctrico ('+kwV+' KW) dentro del límite para categoría '+c.categoría+' ('+limCat.kw+' KW).'});
     }
   }
 
@@ -737,9 +737,9 @@ function buildChecklist(c){
     var alqAnual=0;for(var mi=0;mi<12;mi++)alqAnual+=getV(c,mi,'alq');
     if(alqAnual>0){
       if(alqAnual>limCat.alqMax){
-        items.push({tipo:'danger',texto:'⚠ Alquiler anual ($'+fmt(alqAnual)+') SUPERA el tope para categoría '+c.categoria+' ($'+fmt(limCat.alqMax)+'). Riesgo de exclusión.'});
+        items.push({tipo:'danger',texto:'⚠ Alquiler anual ($'+fmt(alqAnual)+') SUPERA el tope para categoría '+c.categoría+' ($'+fmt(limCat.alqMax)+'). Riesgo de exclusión.'});
       } else {
-        items.push({tipo:'ok',texto:'Alquiler anual ($'+fmt(alqAnual)+') dentro del tope para categoría '+c.categoria+' ($'+fmt(limCat.alqMax)+'). '});
+        items.push({tipo:'ok',texto:'Alquiler anual ($'+fmt(alqAnual)+') dentro del tope para categoría '+c.categoría+' ($'+fmt(limCat.alqMax)+'). '});
       }
     }
   }
@@ -1041,8 +1041,17 @@ function generarPDF(){
     var atpImportePDF=parseFloat(c.atpDeudaImporte||c.atpDeuda||0)||0;
     doc.setFillColor(255,247,237);doc.roundedRect(M,y,W-M*2,9,2,2,'F');
     doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(180,80,20);
-    var atpTxtPDF=atpImportePDF>0?'Deuda pendiente: $'+fmt(atpImportePDF):'Deuda pendiente (ver detalle con su contadora)';
-    doc.text(atpTxtPDF,M+4,y+6);y+=13;
+    var atpDescPDF=c.atpDeuda&&isNaN(parseFloat(c.atpDeuda))?c.atpDeuda:'';
+    var atpTxtPDF='';
+    if(atpDescPDF&&atpImportePDF>0)atpTxtPDF=atpDescPDF+': $'+fmt(atpImportePDF);
+    else if(atpImportePDF>0)atpTxtPDF='Deuda pendiente: $'+fmt(atpImportePDF);
+    else if(atpDescPDF)atpTxtPDF='Deuda: '+atpDescPDF;
+    else atpTxtPDF='Deuda pendiente (ver detalle con su contadora)';
+    var atpLines=doc.splitTextToSize(atpTxtPDF,W-M*2-8);
+    var atpBoxH=atpLines.length*5+8;
+    doc.setFillColor(255,247,237);doc.roundedRect(M,y,W-M*2,atpBoxH,2,2,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(180,80,20);
+    doc.text(atpLines,M+4,y+6);y+=atpBoxH+4;
   }else{
     doc.setFillColor(240,250,243);doc.roundedRect(M,y,W-M*2,9,2,2,'F');
     doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(40,130,70);
@@ -1129,20 +1138,20 @@ function generarPDF(){
   if(pdfCatActual){
     doc.setFillColor(210,228,255);doc.rect(M,y,W-M*2,8,'F');
     doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(20,60,140);
-    doc.text('CATEGORIA '+c.categoria+' - ACTUAL',M+4,y+5.5);
+    doc.text('CATEGORÍA '+c.categoria+' - ACTUAL',M+4,y+5.5);
     doc.text('$'+fmt(pdfCatActual.limite),W-M-4,y+5.5,{align:'right'});
     y+=8;
     doc.setFillColor(250,255,250);doc.rect(M,y,W-M*2,8,'F');
     doc.setDrawColor(200,230,200);doc.rect(M,y,W-M*2,8);
     doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,40,40);
-    doc.text('Podes facturar para mantenerte en la categoria',M+4,y+5.5);
+    doc.text('Podés facturar para mantenerte en la categoría',M+4,y+5.5);
     doc.setFont('helvetica','bold');doc.setTextColor(30,150,70);
     doc.text('$'+fmt(pdfMargen>0?pdfMargen:0),W-M-4,y+5.5,{align:'right'});
     y+=8;
     if(pdfCatSig){
       doc.setFillColor(255,248,220);doc.rect(M,y,W-M*2,8,'F');
       doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(140,100,0);
-      doc.text('CATEGORIA '+pdfCatSig.cat+' - SIGUIENTE',M+4,y+5.5);
+      doc.text('CATEGORÍA '+pdfCatSig.cat+' - SIGUIENTE',M+4,y+5.5);
       doc.text('$'+fmt(pdfCatSig.limite),W-M-4,y+5.5,{align:'right'});
       y+=8;
     }
@@ -1151,14 +1160,14 @@ function generarPDF(){
 
   // 3. TITULO TABLA
   doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(88,103,126);
-  doc.text('CATEGORIAS VIGENTES 2026',M,y);
+  doc.text('CATEGORÍAS VIGENTES 2026',M,y);
   doc.setDrawColor(88,103,126);doc.setLineWidth(0.3);doc.line(M,y+1.5,W-M,y+1.5);
   y+=8;
 
   // 4. TABLA
   doc.setFillColor(220,227,235);doc.rect(M,y,W-M*2,5.5,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(40,40,40);
-  doc.text('Cat.',M+2,y+3.8);doc.text('Limite anual',M+20,y+3.8);doc.text('Diferencia con acumulado',W-M-2,y+3.8,{align:'right'});y+=5.5;
+  doc.text('Cat.',M+2,y+3.8);doc.text('Límite anual',M+20,y+3.8);doc.text('Diferencia con acumulado',W-M-2,y+3.8,{align:'right'});y+=5.5;
   for(var i=0;i<CATEGORIAS_2026.length;i++){
     var cat=CATEGORIAS_2026[i],diff=cat.limite-acumulado;
     var isActual=cat.cat===c.categoria;
@@ -1193,20 +1202,20 @@ function generarPDF(){
 
   var checks=[];
   // Facturacion
-  if(pdfTotalFact>0) checks.push({ok:true,t:'Facturacion acumulada: $'+fmt(pdfTotalFact)});
+  if(pdfTotalFact>0) checks.push({ok:true,t:'Facturación acumulada: $'+fmt(pdfTotalFact)});
   else checks.push({ok:false,t:'Sin facturacion cargada en el periodo'});
   // Categoria
   if(pdfCatA){
-    if(pdfMargenA<0) checks.push({ok:false,t:'SUPERO el limite de categoria '+c.categoria+' por $'+fmt(Math.abs(pdfMargenA))+'. Debe recategorizarse.'});
-    else if(pdfPctUsado>=90) checks.push({ok:false,t:'Uso el '+pdfPctUsado.toFixed(1)+'% del limite. Quedan $'+fmt(pdfMargenA)+'. Riesgo de exclusion.'});
-    else if(pdfPctUsado>=75) checks.push({ok:null,t:'Uso el '+pdfPctUsado.toFixed(1)+'% del limite. Quedan $'+fmt(pdfMargenA)+'. Monitorear.'});
-    else checks.push({ok:true,t:'Dentro de la categoria. Puede facturar $'+fmt(pdfMargenA)+' mas.'});
+    if(pdfMargenA<0) checks.push({ok:false,t:'SUPERO el limite de categoría '+c.categoría+' por $'+fmt(Math.abs(pdfMargenA))+'. Debe recategorizarse.'});
+    else if(pdfPctUsado>=90) checks.push({ok:false,t:'Uso el '+pdfPctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(pdfMargenA)+'. Riesgo de exclusión.'});
+    else if(pdfPctUsado>=75) checks.push({ok:null,t:'Uso el '+pdfPctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(pdfMargenA)+'. Monitorear.'});
+    else checks.push({ok:true,t:'Dentro de la categoría. Puede facturar $'+fmt(pdfMargenA)+' mas.'});
   }
   // Gastos
   if(pdfTotalFact>0){
-    if(pdfPct>90) checks.push({ok:false,t:'% Gastos/Facturacion muy alto: '+pdfPct.toFixed(1)+'%. Revisar costos.'});
-    else if(pdfPct>75) checks.push({ok:null,t:'% Gastos/Facturacion elevado: '+pdfPct.toFixed(1)+'%.'});
-    else checks.push({ok:true,t:'% Gastos/Facturacion saludable: '+pdfPct.toFixed(1)+'%.'});
+    if(pdfPct>90) checks.push({ok:false,t:'% Gastos/Facturación muy alto: '+pdfPct.toFixed(1)+'%. Revisar costos.'});
+    else if(pdfPct>75) checks.push({ok:null,t:'% Gastos/Facturación elevado: '+pdfPct.toFixed(1)+'%.'});
+    else checks.push({ok:true,t:'% Gastos/Facturación saludable: '+pdfPct.toFixed(1)+'%.'});
   }
   // ARCA
   if(c.arcaDeuda){
@@ -1215,7 +1224,7 @@ function generarPDF(){
     if(c.arcaMensual&&parseFloat(c.arcaMensual)>0)pArcaMsg+='. Cuota mensual: $'+fmt(parseFloat(c.arcaMensual));
     pArcaMsg+='. Verificar plan de pago.';
     checks.push({ok:false,t:pArcaMsg});
-  } else checks.push({ok:true,t:'ARCA: Sin deuda. Al dia.'});
+  } else checks.push({ok:true,t:'ARCA: Sin deuda. Al día.'});
   // ATP/DGR
   if(!c.atpAldia){
     var pAtpImporte=parseFloat(c.atpDeudaImporte||c.atpDeuda||0)||0;
@@ -1223,13 +1232,13 @@ function generarPDF(){
     if(pAtpImporte>0)pAtpMsg+=' de $'+fmt(pAtpImporte);
     pAtpMsg+='. Regularizar.';
     checks.push({ok:false,t:pAtpMsg});
-  } else checks.push({ok:true,t:(c.labelATP||'ATP')+': Al dia.'});
+  } else checks.push({ok:true,t:(c.labelATP||'ATP')+': Al día.'});
   // Vencimiento
   if(c.vencFecha){
     var hoyP=new Date();var vencP=new Date(c.vencFecha);
     var diasP=Math.round((vencP-hoyP)/(1000*60*60*24));
     if(diasP<0) checks.push({ok:false,t:'Vencimiento VENCIDO el '+c.vencFecha+'. Importe: $'+fmt(c.vencImporte)+'.'});
-    else if(diasP<=10) checks.push({ok:false,t:'Vencimiento en '+diasP+' dias ('+c.vencFecha+'). Importe: $'+fmt(c.vencImporte)+'.'});
+    else if(diasP<=10) checks.push({ok:false,t:'Vencimiento en '+diasP+' días ('+c.vencFecha+'). Importe: $'+fmt(c.vencImporte)+'.'});
     else checks.push({ok:true,t:'Proximo vencimiento: '+c.vencFecha+'. Importe: $'+fmt(c.vencImporte)+'.'});
   }
   // Comprobantes
@@ -1237,32 +1246,32 @@ function generarPDF(){
     if(frPdf>0) checks.push({ok:true,t:'Comprobantes recibidos: $'+fmt(frPdf)+'.'});
     else checks.push({ok:null,t:'Sin comprobantes de compras. Solicitar facturas de proveedores.'});}
   // Recategorizacion
-  if(c.recatFecha) checks.push({ok:true,t:'Proxima recategorizacion: '+c.recatFecha.toUpperCase()+'. Acumulado: $'+fmt(pdfAcum)+'.'});
+  if(c.recatFecha) checks.push({ok:true,t:'Próxima recategorización: '+c.recatFecha.toUpperCase()+'. Acumulado: $'+fmt(pdfAcum)+'.'});
   // Social
-  if(c.esSocial||c.categoria==='S') checks.push({ok:null,t:'Monotributista Social: verificar compatibilidad con programas sociales y tope de ingresos.'});
+  if(c.esSocial||c.categoría==='S') checks.push({ok:null,t:'Monotributista Social: verificar compatibilidad con programas sociales y tope de ingresos.'});
   // Exclusion regimen
-  if(pdfAcum>108357084.05) checks.push({ok:false,t:'EXCLUSION DEL REGIMEN: Acumulado supera limite categoria K. Debe inscribirse como Responsable Inscripto.'});
+  if(pdfAcum>108357084.05) checks.push({ok:false,t:'EXCLUSION DEL REGIMEN: Acumulado supera limite categoría K. Debe inscribirse como Responsable Inscripto.'});
   // Meses sin facturacion
   // Meses sin facturacion: se controla solo en la app
   // Superficie
-  var pdfLim=LIMITES_CAT[c.categoria];
+  var pdfLim=LIMITES_CAT[c.categoría];
   if(pdfLim&&c.superficie&&parseFloat(c.superficie)>0){
     var pdfSup=parseFloat(c.superficie);
-    if(pdfSup>pdfLim.m2) checks.push({ok:false,t:'Superficie ('+pdfSup+' m²) supera limite categoria '+c.categoria+' ('+pdfLim.m2+' m²).'});
-    else checks.push({ok:true,t:'Superficie ('+pdfSup+' m²) dentro del limite ('+pdfLim.m2+' m²).'});
+    if(pdfSup>pdfLim.m2) checks.push({ok:false,t:'Superficie ('+pdfSup+' m²) supera limite categoría '+c.categoría+' ('+pdfLim.m2+' m²).'});
+    else checks.push({ok:true,t:'Superficie ('+pdfSup+' m²) dentro del límite ('+pdfLim.m2+' m²).'});
   }
   // KW
   if(pdfLim&&c.kwAnual&&parseFloat(c.kwAnual)>0){
     var pdfKw=parseFloat(c.kwAnual);
-    if(pdfKw>pdfLim.kw) checks.push({ok:false,t:'Consumo electrico ('+pdfKw+' KW) supera limite categoria '+c.categoria+' ('+pdfLim.kw+' KW).'});
-    else checks.push({ok:true,t:'Consumo electrico ('+pdfKw+' KW) dentro del limite ('+pdfLim.kw+' KW).'});
+    if(pdfKw>pdfLim.kw) checks.push({ok:false,t:'Consumo eléctrico ('+pdfKw+' KW) supera limite categoría '+c.categoría+' ('+pdfLim.kw+' KW).'});
+    else checks.push({ok:true,t:'Consumo eléctrico ('+pdfKw+' KW) dentro del límite ('+pdfLim.kw+' KW).'});
   }
   // Alquiler vs limite
   if(pdfLim&&c.tieneAlquiler){var pdfAlqA=0;for(var mi3=0;mi3<12;mi3++)pdfAlqA+=getV(c,mi3,'alq');
-    if(pdfAlqA>0){if(pdfAlqA>pdfLim.alqMax) checks.push({ok:false,t:'Alquiler anual ($'+fmt(pdfAlqA)+') supera tope categoria '+c.categoria+' ($'+fmt(pdfLim.alqMax)+'). Riesgo de exclusion.'});
+    if(pdfAlqA>0){if(pdfAlqA>pdfLim.alqMax) checks.push({ok:false,t:'Alquiler anual ($'+fmt(pdfAlqA)+') supera tope categoría '+c.categoría+' ($'+fmt(pdfLim.alqMax)+'). Riesgo de exclusión.'});
     else checks.push({ok:true,t:'Alquiler anual ($'+fmt(pdfAlqA)+') dentro del tope ($'+fmt(pdfLim.alqMax)+'). '});}}
   // Saldos bancarios - advertencia fija
-  checks.push({ok:null,t:'RESPONSABILIDAD DEL CLIENTE: Toda operacion debe ser declarada y facturada, sin importar el medio de cobro (efectivo, transferencia, billetera virtual o tarjeta). ARCA cruza movimientos bancarios con la facturacion declarada. Los cobros en efectivo no facturados generan inconsistencias que pueden derivar en fiscalizaciones o exclusion del regimen.'});
+  checks.push({ok:null,t:'RESPONSABILIDAD DEL CLIENTE: Toda operación debe ser declarada y facturada, sin importar el medio de cobro (efectivo, transferencia, billetera virtual o tarjeta). ARCA cruza movimientos bancarios con la facturación declarada. Los cobros en efectivo no facturados generan inconsistencias que pueden derivar en fiscalizaciones o exclusión del régimen.'});
   // MiPyme
   if(c.tieneMipyme&&c.mipymeVence){
     var hoyM=new Date();var vencM2=new Date(c.mipymeVence);var diasM2=Math.round((vencM2-hoyM)/(1000*60*60*24));
