@@ -978,7 +978,7 @@ function generarPDF(){
   sect('DATOS DEL CLIENTE');
   row2('Nombre',c.nombre||'—');row2('CUIT',c.cuit||'—');
   row2('Categoría monotributo',c.categoria==='S'?'S - Monotributista Social':c.categoria);
-  if(c.domicilio)row2('Dependencia',c.domicilio);
+  if(c.domicilio&&c.domicilio!='undefined')row2('Dependencia',c.domicilio);
   if(c.esSocial){doc.setFillColor(235,245,235);doc.roundedRect(M,y,W-M*2,7,2,2,'F');doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(40,120,40);doc.text('✓ MONOTRIBUTISTA SOCIAL',M+4,y+4.8);y+=9;}
   y+=3;
 
@@ -986,19 +986,39 @@ function generarPDF(){
   sect('1- INGRESOS ANUALES DECLARADOS');
   var nR=c.rubros.length;
   var colW=Math.floor((W-M*2-40-18)/nR);
-  doc.setFillColor(220,227,235);doc.rect(M,y,W-M*2,5.5,'F');
+  // Encabezado con nombre de actividad en 2 líneas si es largo
+  var mesColW=22;
+  var numColW=nR>1?40:0; // columna Total solo si hay más de 1 rubro
+  var actColW=Math.floor((W-M*2-mesColW-numColW)/nR);
+  // Calcular alto del encabezado según largo del nombre
+  var maxNombreLines=1;
+  for(var i=0;i<nR;i++){
+    var nomLines=doc.splitTextToSize(c.rubros[i].nombre||'Rubro '+(i+1),actColW-4);
+    if(nomLines.length>maxNombreLines)maxNombreLines=nomLines.length;
+  }
+  var hdrH=maxNombreLines>1?9:5.5;
+  doc.setFillColor(220,227,235);doc.rect(M,y,W-M*2,hdrH,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(40,40,40);
   doc.text('Mes',M+1,y+3.8);
-  for(var i=0;i<nR;i++)doc.text((c.rubros[i].nombre||'Rubro '+(i+1)).substring(0,22),M+40+i*colW,y+3.8);
-  if(nR>1)doc.text('Total',W-M-1,y+3.8,{align:'right'});
-  y+=5.5;
+  for(var i=0;i<nR;i++){
+    var nomLines=doc.splitTextToSize(c.rubros[i].nombre||'Rubro '+(i+1),actColW-4);
+    doc.text(nomLines,M+mesColW+i*actColW,y+3.8);
+  }
+  if(nR>1)doc.text('Total',W-M-1,y+hdrH-1.5,{align:'right'});
+  y+=hdrH;
   var tots=[];for(var i=0;i<nR;i++)tots.push(0);var grand=0;
   for(var m=0;m<12;m++){
     var rowT=0;
     if(m%2===0){doc.setFillColor(249,250,251);doc.rect(M,y,W-M*2,5,'F');}
     doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(90,90,90);
     doc.text(MESES[m]+'-'+String(c.anio).slice(-2),M+1,y+3.5);
-    for(var r=0;r<nR;r++){var v=getV(c,m,'r'+r);tots[r]+=v;rowT+=v;if(v>0)doc.text('$'+fmt(v),M+40+r*colW+colW-1,y+3.5,{align:'right'});}
+    for(var r=0;r<nR;r++){
+      var v=getV(c,m,'r'+r);tots[r]+=v;rowT+=v;
+      if(v>0){
+        doc.setTextColor(40,40,40);
+        doc.text('$'+fmt(v),M+mesColW+(r+1)*actColW-2,y+3.5,{align:'right'});
+      }
+    }
     grand+=rowT;
     if(rowT>0&&nR>1){doc.setTextColor(40,40,40);doc.text('$'+fmt(rowT),W-M-1,y+3.5,{align:'right'});}
     y+=5;
@@ -1006,7 +1026,9 @@ function generarPDF(){
   doc.setFillColor(195,208,222);doc.rect(M,y,W-M*2,5.5,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(30,30,30);
   doc.text('TOTAL',M+1,y+3.8);
-  for(var i=0;i<nR;i++){if(tots[i]>0)doc.text('$'+fmt(tots[i]),M+40+i*colW+colW-1,y+3.8,{align:'right'});}
+  for(var i=0;i<nR;i++){
+    if(tots[i]>0)doc.text('$'+fmt(tots[i]),M+mesColW+(i+1)*actColW-2,y+3.8,{align:'right'});
+  }
   if(nR>1)doc.text('$'+fmt(grand),W-M-1,y+3.8,{align:'right'});
   y+=9;
 
@@ -1075,7 +1097,7 @@ function generarPDF(){
     var munH=c.munPeriodo?18:12;
     doc.setFillColor(248,249,251);doc.roundedRect(M,y,W-M*2,munH,2,2,'F');
     doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);
-    if(c.municipio)doc.text('Municipio: '+c.municipio+(c.munPeriodo?' · Período: '+c.munPeriodo:''),M+4,y+6);
+    if(c.municipio&&c.municipio!='undefined')doc.text('Municipio: '+c.municipio+(c.munPeriodo&&c.munPeriodo!='undefined'?' · Período: '+c.munPeriodo:''),M+4,y+6);
     doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);
     doc.text('Total acumulado: $'+fmt(munT),M+4,y+(c.munPeriodo?13:9));y+=munH+4;
   }
@@ -1206,7 +1228,7 @@ function generarPDF(){
   else checks.push({ok:false,t:'Sin facturacion cargada en el periodo'});
   // Categoria
   if(pdfCatA){
-    if(pdfMargenA<0) checks.push({ok:false,t:'SUPERO el limite de categoría '+c.categoría+' por $'+fmt(Math.abs(pdfMargenA))+'. Debe recategorizarse.'});
+    if(pdfMargenA<0) checks.push({ok:false,t:'SUPERÓ el limite de categoría '+c.categoría+' por $'+fmt(Math.abs(pdfMargenA))+'. Debe recategorizarse.'});
     else if(pdfPctUsado>=90) checks.push({ok:false,t:'Uso el '+pdfPctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(pdfMargenA)+'. Riesgo de exclusión.'});
     else if(pdfPctUsado>=75) checks.push({ok:null,t:'Uso el '+pdfPctUsado.toFixed(1)+'% del límite. Quedan $'+fmt(pdfMargenA)+'. Monitorear.'});
     else checks.push({ok:true,t:'Dentro de la categoría. Puede facturar $'+fmt(pdfMargenA)+' mas.'});
@@ -1268,7 +1290,7 @@ function generarPDF(){
   }
   // Alquiler vs limite
   if(pdfLim&&c.tieneAlquiler){var pdfAlqA=0;for(var mi3=0;mi3<12;mi3++)pdfAlqA+=getV(c,mi3,'alq');
-    if(pdfAlqA>0){if(pdfAlqA>pdfLim.alqMax) checks.push({ok:false,t:'Alquiler anual ($'+fmt(pdfAlqA)+') supera tope categoría '+c.categoría+' ($'+fmt(pdfLim.alqMax)+'). Riesgo de exclusión.'});
+    if(pdfAlqA>0){if(pdfAlqA>pdfLim.alqMax) checks.push({ok:false,t:'Alquiler anual ($'+fmt(pdfAlqA)+') superó el tope categoría '+c.categoría+' ($'+fmt(pdfLim.alqMax)+'). Riesgo de exclusión.'});
     else checks.push({ok:true,t:'Alquiler anual ($'+fmt(pdfAlqA)+') dentro del tope ($'+fmt(pdfLim.alqMax)+'). '});}}
   // Saldos bancarios - advertencia fija
   checks.push({ok:null,t:'RESPONSABILIDAD DEL CLIENTE: Toda operación debe ser declarada y facturada, sin importar el medio de cobro (efectivo, transferencia, billetera virtual o tarjeta). ARCA cruza movimientos bancarios con la facturación declarada. Los cobros en efectivo no facturados generan inconsistencias que pueden derivar en fiscalizaciones o exclusión del régimen.'});
