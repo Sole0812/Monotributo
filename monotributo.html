@@ -785,8 +785,19 @@ function buildPreview(c){
 function generarPDF(){
   var c=getClient();
   if(!c){alert('Seleccioná un cliente primero.');return;}
+  if(!window.jspdf||!window.jspdf.jsPDF){
+    alert('No se pudo cargar la librería de PDF (jsPDF). Puede ser un AdBlock/extensión bloqueando el CDN, o falta de conexión. Probá desactivar el AdBlock para este sitio y recargar la página.');
+    return;
+  }
+  try{
+    _generarPDFInterno(c);
+  }catch(err){
+    console.error('Error generando PDF:', err);
+    alert('Ocurrió un error generando el PDF: '+err.message+'\n\nRevisá la consola (F12) para más detalle, o contámelo tal cual para que lo revise.');
+  }
+}
+function _generarPDFInterno(c){
   console.log('Iniciando PDF para: '+c.nombre);
-  var c=getClient();if(!c)return;
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({unit:'mm',format:'a4'});
   var W=210,M=18;
