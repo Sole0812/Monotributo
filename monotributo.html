@@ -254,7 +254,8 @@ function upM(mi,k,v){var c=getClient();if(!c)return;if(!c.meses[mi])c.meses[mi]=
 function getV(c,m,k){return parseFloat((c.meses[m]&&c.meses[m][k])?c.meses[m][k]:0)||0;}
 function getRelDepAnual(c){
   if(!c.tieneRelDep||!c.relDepMensual)return 0;
-  return parseFloat(c.relDepMensual||0)*12;
+  var mesesTranscurridos=parseInt(c.mesInforme||0)+1;
+  return parseFloat(c.relDepMensual||0)*mesesTranscurridos;
 }
 function getIngresoTotal(c){return getTotalFact(c)+getRelDepAnual(c);}
 function getTotalFact(c){
@@ -403,7 +404,7 @@ function renderMain(){
         '</div>'+
         '<div style="margin-top:10px;padding:10px;background:#eef7ff;border-radius:8px;border:1px solid #c8dff8">'+
         '<div class="toggle-row" style="background:transparent;padding:0;margin-bottom:0"><input type="checkbox" id="chkRD"'+(c.tieneRelDep?' checked':'')+' onchange="up(\'tieneRelDep\',this.checked);renderMain()"><label for="chkRD" style="font-weight:600;color:#1a5c9e">Tiene trabajo en relación de dependencia</label></div>'+
-        (c.tieneRelDep?'<div style="margin-top:8px" class="row g2"><div><label>Ingreso mensual aproximado ($)</label><input type="number" value="'+(c.relDepMensual||'')+'" placeholder="Ej: 500000" oninput="up(\'relDepMensual\',this.value)"></div><div style="display:flex;align-items:flex-end;padding-bottom:8px"><span style="font-size:12px;color:#1a5c9e;font-weight:600">Estimado anual: $'+fmt(parseFloat(c.relDepMensual||0)*12)+'</span></div></div>':'')+
+        (c.tieneRelDep?'<div style="margin-top:8px" class="row g2"><div><label>Ingreso mensual aproximado ($)</label><input type="number" value="'+(c.relDepMensual||'')+'" placeholder="Ej: 500000" oninput="up(\'relDepMensual\',this.value);renderMain()"></div><div style="display:flex;align-items:flex-end;padding-bottom:8px"><span style="font-size:12px;color:#1a5c9e;font-weight:600">Acumulado a '+(MESES_FULL[parseInt(c.mesInforme||0)])+': $'+fmt(getRelDepAnual(c))+'</span></div></div>':'')+
         '</div>'+
         '<div style="margin-top:10px;padding:10px;background:#f8f8f6;border-radius:8px">'+
         '<div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Inmuebles</div>'+
@@ -513,7 +514,7 @@ function renderGastosLive(c, totalFact){
     '<table class="resumen-table">'+
     '<tr class="fact-total"><td>Facturación monotributo</td><td>$'+fmt(totalFact)+'</td></tr>';
   if(relDep>0)html2+=
-    '<tr class="fact-total" style="background:#e8f4ff"><td>Relación de dependencia (estimado anual)</td><td>$'+fmt(relDep)+'</td></tr>'+
+    '<tr class="fact-total" style="background:#e8f4ff"><td>Relación de dependencia (acumulado)</td><td>$'+fmt(relDep)+'</td></tr>'+
     '<tr style="background:#dce8f8;font-weight:700"><td>Total ingresos</td><td>$'+fmt(ingresoTotal)+'</td></tr>';
   for(var i=0;i<gastos.length;i++)html2+='<tr><td>'+gastos[i].label+'</td><td style="color:#c0392b">− $'+fmt(gastos[i].val)+'</td></tr>';
   html2+='<tr class="total-gastos"><td>Total gastos</td><td>$'+fmt(totalGastos)+'</td></tr>'+
@@ -555,7 +556,7 @@ function buildChecklist(c){
     if(pct>90)items.push({tipo:'danger',texto:lblPct+' muy alto: '+pct.toFixed(1)+'%. Revisar estructura de costos.'+(relDepA>0?' Separar gastos del local de gastos personales.':'')});
     else if(pct>75)items.push({tipo:'warn',texto:lblPct+' elevado: '+pct.toFixed(1)+'%.'+(relDepA>0?' Verificar separación gastos del local vs. personales.':'')});
     else items.push({tipo:'ok',texto:lblPct+' saludable: '+pct.toFixed(1)+'%.'});
-    if(relDepA>0)items.push({tipo:'info',texto:'Relación de dependencia: ingreso estimado anual $'+fmt(relDepA)+'. Los gastos que superan la facturación del monotributo son cubiertos por este ingreso. Importante: separar compras/gastos del local de los gastos personales.'});
+    if(relDepA>0)items.push({tipo:'info',texto:'Relación de dependencia: ingreso acumulado $'+fmt(relDepA)+'. Los gastos que superan la facturación del monotributo son cubiertos por este ingreso. Importante: separar compras/gastos del local de los gastos personales.'});
   }
   if(c.arcaDeuda){
     var arcaMsg='Deuda en ARCA';
@@ -1040,7 +1041,7 @@ function _generarPDFInterno(c){
   doc.text('Facturación monotributo',M+4,yy);doc.text('$'+fmt(totalFact),W-M-4,yy,{align:'right'});yy+=lineH;
   if(relDepPDF>0){
     doc.setFont('helvetica','normal');doc.setTextColor(26,90,180);
-    doc.text('Relacion de dependencia (estimado anual)',M+4,yy);doc.text('$'+fmt(relDepPDF),W-M-4,yy,{align:'right'});yy+=lineH;
+    doc.text('Relacion de dependencia (acumulado)',M+4,yy);doc.text('$'+fmt(relDepPDF),W-M-4,yy,{align:'right'});yy+=lineH;
     doc.setFont('helvetica','bold');doc.setTextColor(10,60,140);
     doc.text('Total ingresos',M+4,yy);doc.text('$'+fmt(ingTotalPDF),W-M-4,yy,{align:'right'});yy+=lineH;
   }
@@ -1151,7 +1152,7 @@ function _generarPDFInterno(c){
     if(pdfPctFinal>90) checks.push({ok:false,t:pdfLblPct+' muy alto: '+pdfPctFinal.toFixed(1)+'%. Revisar costos.'+(pdfRelDep>0?' Separar gastos del local de personales.':'')});
     else if(pdfPctFinal>75) checks.push({ok:null,t:pdfLblPct+' elevado: '+pdfPctFinal.toFixed(1)+'%.'});
     else checks.push({ok:true,t:pdfLblPct+' saludable: '+pdfPctFinal.toFixed(1)+'%.'});
-    if(pdfRelDep>0) checks.push({ok:null,t:'Relacion de dependencia: ingreso estimado anual $'+fmt(pdfRelDep)+'. Los gastos que superan la facturacion del monotributo son cubiertos por este ingreso.'});
+    if(pdfRelDep>0) checks.push({ok:null,t:'Relacion de dependencia: ingreso acumulado $'+fmt(pdfRelDep)+'. Los gastos que superan la facturacion del monotributo son cubiertos por este ingreso.'});
   }
   if(false){
     if(pdfPct>90) checks.push({ok:false,t:'% Gastos/Facturación muy alto: '+pdfPct.toFixed(1)+'%. Revisar costos.'});
