@@ -1016,9 +1016,10 @@ function _generarPDFInterno(c){
     doc.setFillColor(248,249,251);doc.roundedRect(M,y,W-M*2,munH,2,2,'F');
     doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);
     var _mTxt=(c.munNombre&&c.munNombre!='undefined'?c.munNombre+' - ':'')+''+(c.municipio&&c.municipio!='undefined'?c.municipio:'')+(c.munPeriodo&&c.munPeriodo!='undefined'?' · '+c.munPeriodo:'');
-    if(_mTxt.trim()){doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);doc.text(_mTxt,'Municipio: '+c.municipio+(c.munPeriodo&&c.munPeriodo!='undefined'?' · Período: '+c.munPeriodo:''),M+4,y+6);
+    if(_mTxt.trim()){doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);doc.text(_mTxt,M+4,y+6);
     doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(30,30,30);
     doc.text('Total acumulado: $'+fmt(munT),M+4,y+(c.munPeriodo?13:9));y+=munH+4;
+  }
   }
   if(c.tieneMipyme){
     sect(secNum+'- CERTIFICADO MIPYME');secNum++;
@@ -1379,7 +1380,6 @@ function importarClientes(event){
   };
   reader.readAsText(file);
   event.target.value='';
-}
 }
 loadData();
 document.addEventListener('click', function(e){
