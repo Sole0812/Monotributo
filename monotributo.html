@@ -163,12 +163,18 @@ const LIMITES_CAT={
   'S':{m2:30,kw:3330,alqMax:2390229.80}
 };
 const CATEGORIAS_2026=[
-  {cat:'A',limite:10277988.13},{cat:'B',limite:15058447.71},{cat:'C',limite:21113696.52},
-  {cat:'D',limite:26212853.42},{cat:'E',limite:30833964.37},{cat:'F',limite:38642048.36},
-  {cat:'G',limite:46211109.37},{cat:'H',limite:70113407.33},{cat:'I',limite:78479211.62},
-  {cat:'J',limite:89872640.30},{cat:'K',limite:108357084.05},
-  {cat:'S',limite:10277988.13}
+  {cat:'A',limite:12009410.45},{cat:'B',limite:17595182.74},{cat:'C',limite:24670494.31},
+  {cat:'D',limite:30628651.43},{cat:'E',limite:36028231.33},{cat:'F',limite:45151659.41},
+  {cat:'G',limite:53995798.87},{cat:'H',limite:81924660.37},{cat:'I',limite:91699761.90},
+  {cat:'J',limite:105012519.20},{cat:'K',limite:126610838.75},
+  {cat:'S',limite:12009410.45}
 ];
+const CUOTAS_2026={
+  'A':{serv:49527.18,prod:49527.18},'B':{serv:56379.08,prod:56379.08},'C':{serv:66020.12,prod:64530.58},
+  'D':{serv:84612.93,prod:82564.81},'E':{serv:119811.45,prod:108267.51},'F':{serv:150784.21,prod:129930.65},
+  'G':{serv:230312.94,prod:158815.05},'H':{serv:522706.68,prod:317895.01},'I':{serv:963747.86,prod:474992.78},
+  'J':{serv:1167299.76,prod:580793.69},'K':{serv:1614446.04,prod:702103.24}
+};
 var appData={clients:[]};
 var LOGO_B64='';
 var currentId=null;
@@ -688,12 +694,18 @@ function renderRecat(){
       '<span style="background:'+(cambio==='sube'?'#c0392b':cambio==='baja'?'#27ae60':'#5a6b8c')+';color:#fff;padding:4px 10px;border-radius:14px;font-size:12px;font-weight:600">Cat. '+(catQueda?catQueda.cat:'-')+'</span>'+
     '</div>'+
   '</div>';
+  var tipoRubro=(c.rubros&&c.rubros[0]&&c.rubros[0].tipo==='productos')?'prod':'serv';
+  var tipoLabel=tipoRubro==='prod'?'productos':'servicios';
+  var cuotaActual=catActual&&CUOTAS_2026[catActual.cat]?CUOTAS_2026[catActual.cat][tipoRubro]:null;
+  var cuotaQueda=catQueda&&CUOTAS_2026[catQueda.cat]?CUOTAS_2026[catQueda.cat][tipoRubro]:null;
   if(catActual){
     html+='<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px">'+
-      '<tr><td style="padding:6px 4px;color:#667">Categoría actual ('+catActual.cat+') · límite anual</td><td style="padding:6px 4px;text-align:right;font-weight:600">$'+fmt(catActual.limite)+'</td></tr>'+
-      '<tr><td style="padding:6px 4px;color:#667">Puede facturar para mantenerse en '+catActual.cat+'</td><td style="padding:6px 4px;text-align:right;font-weight:700;color:'+(margen>=0?'#27ae60':'#c0392b')+'">$'+fmt(margen>0?margen:0)+'</td></tr>'+
-      (catSig?'<tr><td style="padding:6px 4px;color:#667">Categoría siguiente ('+catSig.cat+') · límite anual</td><td style="padding:6px 4px;text-align:right;font-weight:600">$'+fmt(catSig.limite)+'</td></tr>':'')+
-    '</table>';
+      '<thead><tr style="background:#dde3ec"><th style="text-align:left;padding:5px 6px">Concepto</th><th style="text-align:right;padding:5px 6px">Cat. '+catActual.cat+' (actual)</th>'+(catQueda?'<th style="text-align:right;padding:5px 6px">Cat. '+catQueda.cat+' (nueva)</th><th style="text-align:right;padding:5px 6px">Diferencia</th>':'')+'</tr></thead><tbody>'+
+      (cuotaActual!==null?'<tr><td style="padding:6px 4px;color:#667">Impuesto ('+tipoLabel+')</td><td style="padding:6px 4px;text-align:right;font-weight:600">$'+fmt(cuotaActual)+'</td>'+(catQueda&&cuotaQueda!==null?'<td style="padding:6px 4px;text-align:right;font-weight:600">$'+fmt(cuotaQueda)+'</td><td style="padding:6px 4px;text-align:right;font-weight:600;color:'+(cuotaQueda-cuotaActual>=0?'#c0392b':'#27ae60')+'">'+(cuotaQueda-cuotaActual>=0?'+ ':'')+'$'+fmt(cuotaQueda-cuotaActual)+'</td>':'')+'</tr>':'')+
+      '<tr><td style="padding:6px 4px;color:#667">Límite anual</td><td style="padding:6px 4px;text-align:right;font-weight:600">$'+fmt(catActual.limite)+'</td>'+(catQueda?'<td style="padding:6px 4px;text-align:right;font-weight:600">$'+fmt(catQueda.limite)+'</td><td></td>':'')+'</tr>'+
+      '<tr><td style="padding:6px 4px;color:#667">Puede facturar para mantenerse en '+catActual.cat+'</td><td style="padding:6px 4px;text-align:right;font-weight:700;color:'+(margen>=0?'#27ae60':'#c0392b')+'" colspan="'+(catQueda?'3':'1')+'">$'+fmt(margen>0?margen:0)+'</td></tr>'+
+    '</tbody></table>'+
+    '<p style="font-size:10.5px;color:#aaa;margin-top:-4px;margin-bottom:10px">Cuota mensual estimada según rubro cargado ('+tipoLabel+'). Verificar contra la tabla oficial vigente antes de informar al cliente.</p>';
   }
   html+='<div class="card-title" style="margin-top:4px">Categorías vigentes 2026</div>'+
     '<table style="width:100%;border-collapse:collapse;font-size:12.5px">'+
